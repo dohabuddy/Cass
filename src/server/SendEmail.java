@@ -67,8 +67,8 @@ public class SendEmail {
     final static private String host = "smtp.gmail.com";
 
     // -- You must have a valid gmail username/password pair to use gmail as a SMTP service
-    static private String username = "csc335pablo";
-    static private String password = "bobp qxbv djxm tqvk\n";
+    static private String username = "casspassrecovery";
+    static private String password = "eslv wtrn nybd mxbi\n";
     private String tempPass = "abcd$1234";
     private String messagetext = "Here is your password : " + tempPass;
     private String from = "";

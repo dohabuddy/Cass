@@ -1,11 +1,9 @@
 package server;
-
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
-
 public class MultiThread extends Thread {
     private boolean clientIsConnected;
     private int id;
@@ -20,7 +18,7 @@ public class MultiThread extends Thread {
         this.socket = socket;
         this.server = server;
         clientIsConnected = true;
-        // Create the stream I/O objects on top of the socket
+        //  Create the stream I/O objects on top of the socket
         try {
             datain = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             dataout = new DataOutputStream(socket.getOutputStream());
@@ -38,7 +36,6 @@ public class MultiThread extends Thread {
                     on the end due to how BufferedReader readLine() works.
                     The client adds it to the user's string but the BufferedReader
                     readLine() call strips it off   */
-
                 // Using receive() instead of datain.readLine() cause...idk
                 String txtIn = network.receive();
                 if(txtIn != null) {

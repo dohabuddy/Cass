@@ -24,7 +24,7 @@ public class DBMS {
         try {
             // Make connection to the database
             connection = DriverManager.getConnection(url, username, password);
-            // These will send queries to the database
+            // These will Send queries to the database
             statement = connection.createStatement();
             result = statement.executeQuery("SELECT VERSION()");
             if (result.next()) {
@@ -111,8 +111,7 @@ public class DBMS {
     //  Main test
     public static void LoadUserDatabase() {
         // Make the JDBC connection (Java Database Connectivity)
-        DBMS dbc = new DBMS(usernameSQL, passwordSQL);
+        new DBMS(usernameSQL, passwordSQL);
         // Perform some SQL operations
-        dbc.accessDatabase();
     }   //  End Main
 }   //  End DBMS Class

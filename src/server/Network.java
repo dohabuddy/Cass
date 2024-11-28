@@ -1,35 +1,25 @@
 package server;
-
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.Socket;
-import java.net.UnknownHostException;
-
+import java.io.*;
+import java.net.*;
+// Independent Constructors for Client and Server
 // Client: Send, then Receive/listen
 // Server: Receive/Listen then Send
-// Alternating modes
-
 public class Network {
+    //  Port is a constant variable
     private static final int PORT = 8000;
-
+    //  Essential indexing variables
     private String name;
     private int id;
-
-    // handling peer to peer communication
+    // Handling peer-to-peer communication
+    private Socket socket;
     private BufferedReader datain;
     private DataOutputStream dataout;
-
-    private Socket socket;
-
-    // In given code: this was the public Client() method in Client.java
-    // Client Network Object
+    //  --  Network Object Constructor for Client Program   --
     public Network(String host){
         try {
-            // -- construct the peer to peer socket
+            // Construct peer-to-peer socket
             socket = new Socket(host, PORT);
-            // -- wrap the socket in stream I/O objects
+            // Wrap socket in I/O stream objects
             datain = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             dataout = new DataOutputStream(socket.getOutputStream());
         } catch (UnknownHostException e) {
@@ -38,61 +28,50 @@ public class Network {
         } catch (IOException e) {
             System.out.println("Unable to create I/O streams.");
             System.exit(1);
-        }
-    }
-
-    //In given code: this was the ConnectionThread Constructor
-    // -- creates I/O objects on top of the socket
-    // Server Network Object
+        }   //  End Catch
+    }   //  --  End Client Network Object   --
+    //  --  Network Object Constructor for Server Program   --
     public Network(int id, Socket socket) {
         this.id = id;
         this.name = Integer.toString(id);
-
         try {
             datain = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             dataout = new DataOutputStream(socket.getOutputStream());
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(1);
-        }
-    }
-
-    // ClientGUI -> Client -> Network -> Server -> Network -> Client -> ClientGUI
-    // Client -> Network - clientConnection.send(String)
+        }   //  End Catch
+    }   //  --  End Server Network Object   --
+    // ClientGUI -> Client -> Network -> "Server" -> Network -> Client -> ClientGUI
+    // Client -> Network - clientConnection.Send(String)
     // Network -> Server - server.parseInput(txtIn)
     // Server -> Network - the return message from parseInput()
-    public String send(String msg) {
-        String rtnmsg = "";
-
+    //  --  Send String Method  --
+    public String send(String message) {
+        String returnMessage = "";
         try {
-            // send String to Server
-            dataout.writeBytes(msg + "\n"); // write string to bytes
-            dataout.flush(); // send string to server
-
-
-//            // receive response from the Server - automated - rn Server doesnt actually get the message
-            rtnmsg = ""; // empty string for response
-            do { // read for input while the response string is empty
-                socket.setSoTimeout(5000); // Timeout of 5 seconds - makes it so the client wont wait forever
-                // and ever if something is wrong
-                rtnmsg = datain.readLine();
-            } while (rtnmsg.equals(""));
+            dataout.writeBytes(message + "\n"); //  Write string to bytes
+            dataout.flush();    // Send string to server
+            returnMessage = "";    //  Empty string for response
+            do {    //  Read for input while the response string is empty
+                socket.setSoTimeout(5000);  //  Timeout after 5 seconds if something goes wrong
+                returnMessage = datain.readLine();
+            } while (returnMessage.equals(""));
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(1);
-        }
-        return rtnmsg;
-    }
-
+        }   //  End Catch
+        return returnMessage;
+    }   //  --  End Send Method --
+    //  --  Receive Response Method --
     public String receive(){
-        String res = "";
-      try {
-          res = datain.readLine();
-      } catch (IOException e){
-          e.printStackTrace();
-          System.exit(1);
-      }
-      return res;
-    }
-}
-
+        String response = "";
+        try {
+            response = datain.readLine();
+        } catch (IOException e){
+            e.printStackTrace();
+            System.exit(1);
+        } //  End Catch
+        return response;
+    }   //  --  End Receive --
+}   //  END NETWORK CLASS

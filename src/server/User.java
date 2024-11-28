@@ -1,5 +1,7 @@
 package server;
 
+import java.util.ArrayList;
+
 public class User {
     private String username;
     private String password;
@@ -7,15 +9,7 @@ public class User {
     private boolean logged;
     private boolean locked;
     private int strikes;
-
-    public User(){
-        username = "";
-        password = "";
-        email = "";
-        logged = false;
-        locked = false;
-        strikes = 0;
-    }
+    public static ArrayList<User> userList = new ArrayList<>();
 
     public User(String user, String pass, String add){
         this.username = user;
@@ -69,4 +63,7 @@ public class User {
         this.strikes = strikes;
     }
 
+    public void addToUserList(User user){
+        userList.add(user);
+    }
 }

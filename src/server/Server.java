@@ -14,49 +14,37 @@ public class Server {
     // Port Server Will Be Listening To
     public static final int PORT = 8000;
     //public SendEmail email = new SendEmail();
-    // mock accounts
-    private ArrayList<User> accounts = new ArrayList<>();
-    // Testing Variables - using to ensure connection is working
-    User lynn = new User("lynnir", "blahblah123", "elliecavanagh002@gmail.com");
-    User yasmine = new User ("yafkir", "12345678", "yafkir@gmail.com");
-
-
-    // -- SERVER BUILD --
-    public static void main (String args[]) {
-        new Server();
-    }
-
+    // -- Server Constructor  --
     public Server() {
         //  Construct the list of active client threads
         clientConnections = new Vector<>();
-        accounts.add(lynn);
-        accounts.add(yasmine);
         //  Listen for incoming connection requests
         listen();
-    }
-
-    //  Returns Server Port
+    }   //  --  End Server Constructor  --
+    //  --  Start Server From GUI Method    --
+    public void startServer(){
+        new Server();
+    }   //  --  End Start Server Method --
+    //  --  Get Port Method --
     public static int getPort() {
         return PORT;
-    }
-
-    // Called by a ServerThread after a client is terminated
-    public void removeID(int id) {
+    }   //  --  End Get Port Method --
+    //  --  Remove ID of individual Client Object Method    --
+    public void removeID(int ID) {  // Called by a ServerThread after a client is terminated
         //  Find the object belonging to the client thread being terminated
         for (int i = 0; i < clientConnections.size(); ++i) {
             MultiThread cc = clientConnections.get(i);
-            long x = cc.getId();
-            if (x == id) {
+            long targetID = cc.getId();
+            if (targetID == ID) {   //  If matching ID is found
                 // Remove ID from the clientConnections list and the connection thread will terminate itself
                 clientConnections.remove(i);
                 //  Place some text in the area to let the server operator know what is going on
-                System.out.println("SERVER: connection closed for client id " + id + "\n");
+                System.out.println("SERVER: connection closed for client id " + ID + "\n");
                 break;
-            }   //  End if(x == id)
-        }   //  End removeID(int id)
-    }
-
-    // adjust this so something gets sent back to the client so they know they connected
+            }   //  End If
+        }   //  End For
+    }   //  --  End Remove ID Method    --
+    //  --  Peer Connection Creation Method --
     private void peerConnection(Socket socket) {
         //  Create a thread communication when client arrives
         Network networkConnection = new Network(nextId, socket);
@@ -68,17 +56,16 @@ public class Server {
         //  Place some text in the area to let the server operator know what is going on
         System.out.println("SERVER: connection received for id " + nextId + "\n");
         ++nextId;
-    }
-
-    // Opens Server side connection - Stays in Server!
+    }   //  --  End Peer Connection Method  --
+    //  --  Server Listens for new connections  --
     public void listen(){
         try {
             //  Open the server socket
-            serversocket = new ServerSocket(getPort()); // listens to Port 8000
+            serversocket = new ServerSocket(getPort()); // Listens to Port 8000
             //  Server runs until we manually shut it down
             while(true) {   //  Infinite Loop Created
                 //  Block until a client comes along
-                Socket socket = serversocket.accept(); // client socket is connected to server now
+                Socket socket = serversocket.accept(); //   Client socket is connected to server now
                 //  If connection is accepted then create a peer-to-peer socket
                 peerConnection(socket); // client is talking to server now
             }   //  End While (true)
@@ -86,51 +73,48 @@ public class Server {
         catch(IOException e) {
             e.printStackTrace();
             System.exit(1);
-        }
-    }
-
-
-    // -- SERVER OPERATIONS --
-
-    // test login function
-    public String login(String user, String pass){ // not grabbing user properly
-        String res = "";
-        // if user exists
-        for(int i = 0; i < accounts.size(); i++){
-            User account = accounts.get(i);
+        }   //  End Catch
+    }   //  --  End Listen  --
+    //  -- SERVER OPERATIONS --
+    //  -- Log in to Server Method  --
+    public String login(String user, String pass){
+        //  Login variables
+        String response = "";
+        for(int i = 0; i <User.userList.size(); i++){   //  Check user list
+            User account = User.userList.get(i);
             if(!user.equals(account.getUser())){ // if user doesn't exist / match
-                res = "1"; // no user exists
+                response = "1"; // no user exists
             } else if (account.getLocked()){ // checks if acc is locked out
-                res = "2"; // account is locked
+                response = "2"; // account is locked
                 break;
             } else if (account.getLogged()){ // checks if account is already signed in
-                res = "3"; // account is already signed in
+                response = "3"; // account is already signed in
                 break;
             } else if (!pass.equals(account.getPass())){ // checks if pass matches
                 int strikes = account.getStrikes();
                 if(strikes == 3){
                     account.setLocked(true);
-                    res = "2";
+                    response = "2";
                 } else {
                     int attempts = 3 - strikes;
-                    res = "4" + strikes + ":" + attempts;
+                    response = "4" + strikes + ":" + attempts;
                     account.setStrikes(0);
                 }
             } else { // successful login
                 account.setLog(true);
-                res = "0";
+                response = "0";
                 break;
             }
         }
-        return res;
+        return response;
     }
 
     // tester password recovery function -- working with mock accounts
     public String passRecover(String user) {
         SendEmail email = new SendEmail();
         String res = "";
-        for (int i = 0; i < accounts.size(); i++) {
-            User account = accounts.get(i);
+        for (int i = 0; i < User.userList.size(); i++) {
+            User account = User.userList.get(i);
             if (!user.equals(account.getUser())) {
                 res = "1"; // user does not exist
             } else {
@@ -148,8 +132,8 @@ public class Server {
     public String register(String user, String pass, String add){
         String res = "";
         boolean userExists = false;
-        for (int i = 0; i < accounts.size(); i++){
-            User account = accounts.get(i);
+        for (int i = 0; i < User.userList.size(); i++){
+            User account = User.userList.get(i);
             System.out.println(account.getUser());
             if (user.equals(account.getUser())){ // if account with user already exists
                 userExists = true;
@@ -159,8 +143,8 @@ public class Server {
         }
         if (!userExists){
             User account = new User(user, pass, add); // create new user
-            accounts.add(account); // add new user to arraylist
-            System.out.println(accounts.size());
+            User.userList.add(account); // add new user to arraylist
+            System.out.println(User.userList.size());
             res = "0"; // successful registration
         }
         return res;
