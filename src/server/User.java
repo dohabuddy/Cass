@@ -20,7 +20,7 @@ public class User {
         strikes = 0;
     }
 
-    //Getters and Setters
+    //  Getters and Setters
     public String getUser(){
         return this.username;
     }
