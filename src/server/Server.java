@@ -27,7 +27,6 @@ public class Server {
         this.userDB = new DBMS();
         userDB.loadUserList();
         userDB.printUserList();
-        userDB.close();
     }   //  --  End Server Constructor  --
     //  --  Start Server From GUI Method    --
     public static void startServer(){
@@ -39,6 +38,7 @@ public class Server {
         try {
             if (serversocket != null && !serversocket.isClosed()) {
                 serversocket.close();  // Close the ServerSocket
+                userDB.close();
                 System.out.println("Server stopped.");
             }
         } catch (IOException e) {
