@@ -20,6 +20,7 @@ public class ServerGUI extends JFrame {
     private Thread serverThread;
     private boolean isServerRunning = false;
 
+    private int registeredUsers;
     public ServerGUI() {
         setTitle("Server Management Console");
         setSize(700, 500);

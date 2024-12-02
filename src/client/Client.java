@@ -8,6 +8,7 @@ public class Client {
     private boolean clientIsLoggedIn = false;
     private boolean passwordIsValid = false;
     private boolean emailIsValid = false;
+    public String username;
     public Network clientConnection;
     // --   Client Constructor for GUI to build Client Object   --
     public Client() {
@@ -54,9 +55,10 @@ public class Client {
             char readServerOperation = response.charAt(0);
             switch (readServerOperation){   //  Read Server response with first character key
                 case '0':   //  '0'=Success
-                    outputGUI = "User successfully signed in.";
+                    outputGUI = "0User successfully signed in.";
                     System.out.println(outputGUI);  //  Display Logic
                     clientIsLoggedIn = true;
+                    this.username = username;
                     break;
                 case '1':   //  '1'=Failed, no matching username
                     outputGUI = "No username matching our records.";
@@ -118,13 +120,14 @@ public class Client {
                         System.out.println("Registration failed. Please try again.");   //  Display Logic
                         break;
                 }   //  End Switch
+            } else if (!passwordIsValid){   //  If password is invalid
+                outputGUI = "Please enter a valid password.";
+            } else if (!emailIsValid){  //  If email is invalid
+                outputGUI = "Please enter a valid email.";
             } else {    //  If Client is not connected
                 System.out.println("Please connect to the server first.");
             }   //  End Else
-        } else if (!passwordIsValid){   //  If password is invalid
-            outputGUI = "Please enter a valid password.";
-        } else if (!emailIsValid){  //  If email is invalid
-            outputGUI = "Please enter a valid email.";
+
         }   //  End Else If
         return outputGUI;
     }   //  --  End Register    --
@@ -161,7 +164,7 @@ public class Client {
     public String logout() {
         //  Logout variables
         String outputGUI = "";
-        String request = "4";   //  Append operation character key
+        String request = "4" + username;   //  Append operation character key
         String response = "";
         if (clientIsLoggedIn) { //  If client is logged in
             response = clientConnection.send(request);  //  Send logout request
@@ -182,7 +185,7 @@ public class Client {
         }   //  End Else
         return outputGUI;
     }   //  --  End Logout Method   --
-    //  --  Disconnect Client from Server Method    --
+    //  --  Disconnect Client from Server Method (5)    --
     public String disconnect() {
         //  Disconnect variables
         String outputGUI = "";
@@ -206,10 +209,58 @@ public class Client {
         }   //  End Else
         return outputGUI;
     }   //  --  End Disconnect Method   --
-    // Print connection status method???
-    public void printConnectionStatus() {
-        System.out.println("Server: " + HOST);
-        System.out.println("Connected: " + clientIsConnected);
-        System.out.println("Logged In: " + clientIsLoggedIn);
+    //  --  Shutdown Method (6) --
+    public String shutdown(){
+        String outputGUI = "";
+        String request = "6" + username;
+        String response = "";
+        response = clientConnection.send(request);  // Send shutdown request
+        switch(response.charAt(0)){
+            case '0':   //  Successful Shutdown
+                outputGUI = "Shutdown Successful";
+                System.out.println(outputGUI);
+                break;
+            case '1':   //  Failed Logout
+                outputGUI = "Shutdown Failed due to Faulty Logout";
+                System.out.println(outputGUI);
+                break;
+            case '2':   //  Failed Disconnect
+                outputGUI = "Shutdown Failed due to Faulty Disconnect";
+                System.out.println(outputGUI);
+                break;
+            default:
+                outputGUI = "Unknown Error";
+                System.out.println(outputGUI);
+                break;
+        }   //  End Switch
+        return outputGUI;
+    }   //  --  End Shutdown Method --
+    //  --  Update Password Method (7)  --
+    public String updatePassword(String newPassword){
+        String outputGUI = "";
+        String response = "";
+        passwordIsValid = RegexEmail.validPassword(newPassword);   //  Check valid password
+        if (!passwordIsValid) {   //  If password is invalid
+            outputGUI = "Please enter a valid password.";
+        } else {
+            String request = "7" + username + ":" + newPassword;
+            if (clientIsConnected && clientIsLoggedIn) {    //  If Client is connected
+                response = clientConnection.send(request);  // Send disconnect request
+                System.out.println("CLIENT receive: " + response);
+                //  Handle server response
+                char readServerOperation = response.charAt(0);
+                //  Read Server response with first character key
+                if (readServerOperation == '0') {   //  '0'=Success
+                    outputGUI = "Client Logged Out Successfully";
+                    System.out.println(outputGUI);  //  Display Logic
+                } else {
+                    outputGUI = "Unsuccessful Update";
+                }   //  End Else
+            }   //  End If
+        }   //  End Else
+        return response;
+    }   //  --  End  Update Password Method --
+    public String serverApplication(){
+        return "Done.";
     }
 }   //  END CLIENT CLASS

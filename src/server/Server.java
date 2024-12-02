@@ -45,8 +45,8 @@ public class Server {
                 connection.interrupt();  // Assuming MultiThread extends Thread
             }
             clientConnections.clear();  // Clear the list of client connections
-            userDB.disconnectAll(userDB);
             userDB.logoutAll(userDB);
+            userDB.disconnectAll(userDB);
 
             System.out.println("Server stopped.");
         } catch (IOException e) {
@@ -117,85 +117,100 @@ public class Server {
             System.out.println("Server stopped listening.");
         }   //  End Finally
     }   //  --  End Listen Method   --
-    //  -- SERVER OPERATIONS --
+    //  -- CLIENT OPERATIONS --
     //  -- Log in to Server Method  --
     public String login(String username, String pass) {
         //  Login variables
         String response = "";
-        int i = 0;
-        while (i < User.userList.size()) {   //  Check username list
-            User test = User.userList.get(i);
-            User account = null;
-            int index = -1;
-            if (username.equals(test.getUsername())) {
-                index = i;
-                account = User.userList.get(index);
-            }   //  End If
-            if (index == -1 || account == null) {
-                response = "1"; //  No username exists
-            } else if (account.isLocked()) { // checks if acc is locked out
+        int index = indexOfUser(username);
+        if(index == -1) response = "1"; //  No username exists
+        else {
+            User account = User.userList.get(index);
+            if (account.isLocked()) { // checks if acc is locked out
                 response = "2"; // account is locked
-                break;
             } else if (account.isLogged()) { // checks if account is already signed in
                 response = "3"; // account is already signed in
-                break;
             } else if (!account.getPassword().equals(pass)) {
                 account.addStrike(userDB);
                 response = "4" + account.getStrikes(); //  Incorrect password plus one strike
-                break;
             } else {    //  Successful login
+                account.setConnected(true, userDB);
                 account.setLogged(true, userDB);
                 account.resetStrikes(userDB);
-                account.setConnected(true, userDB);
                 response = "0";
-                break;
             }   //  End Else
-            ++i;
-        }   //  End While
+        }   //  End Else
         return response;
     }   //  --  End Login Method    --
-    // tester password recovery function -- working with mock accounts
-    public String passRecover(String user) {
+    //  --  Password Recovery Method    --
+    public String passwordRecovery(String username) {
         SendEmail email = new SendEmail();
         String response = "";
-        for (int i = 0; i < User.userList.size(); i++) {
-            User account = User.userList.get(i);
-            if (!user.equals(account.getUsername())) {
-                response = "1"; // user does not exist
-            } else {
-                String address = account.getEmail(); // getting user email
-                System.out.println(address);    //  Display Logic
-                String newPassword = email.generateEmail(address); // sending email
-                System.out.println(newPassword);    //  Display Logic
-                userDB.updateUserPassword(account, newPassword, userDB);    // setting accounts password to temp password
-                response = "0"; //  Sending back to parseInput
-                break;
-            }
-        }
+        int index = indexOfUser(username);
+        if(index == -1) response = "1"; //  Username does not exists
+        else {
+            User account = User.userList.get(index);
+            String address = account.getEmail(); // getting user email
+            //System.out.println(address);    //  Display Logic
+            String newPassword = email.generateEmail(address); // sending email
+            //System.out.println(newPassword);    //  Display Logic
+            userDB.updateUserPassword(account, newPassword, userDB);    // setting accounts password to temp password
+            response = "0"; //  Sending back to parseInput
+        }   //  End Else
         return response;
-    }
-    // tester register function
-    public String register(String username, String password, String email){
-        String res = "";
-        boolean userExists = false;
-        for (int i = 0; i < User.userList.size(); i++){
-            User account = User.userList.get(i);
-            System.out.println(account.getUsername());
-            if (username.equals(account.getUsername())){ // if account with user already exists
-                userExists = true;
-                res = "1";
-                break;
-            }
-        }
-        if (!userExists){
-            User account = new User(username, password, email); // create new user
-            userDB.registerUser(account); // add new user to arraylist
-            userDB.syncUserList();
+    }   //  --  End Password Recovery Method    --
+    //  --  Register New User Method    --
+    public String register(String username, String password, String email) {
+        String response = "";
+        int index = indexOfUser(username);
+        if (index != -1) response = "1"; //  Username exists
+        else {
+            User account = new User(username, password, email); //  Create new user
+            userDB.registerUser(account);   //  Add new user to database
+            userDB.syncUserList();  //  Sync database to array list
             System.out.println(User.userList.size());
-            res = "0"; // successful registration
-        }
-        return res;
-    }
+            response = "0"; // successful registration
+        }   //  End Else
+        return response;
+    }   //  --  End Register Method --
+    //  --  Logout Method   --
+    public String logout(String username){
+        String response = "";
+        int index = indexOfUser(username);
+        if (index == -1) response = "1"; //  Username does not exists
+        else {
+            User account = User.userList.get(index);
+            account.setConnected(false,userDB);
+            account.setLogged(false,userDB);
+            response = "0";
+        }   //  End Else
+        return response;
+    }   //  --  End Logout Method   --
+    public String shutdown(String username){
+        String response = "";
+        int index = indexOfUser(username);
+        if (index == -1) response = "1"; //  Username does not exists
+        else {
+            String logoutSuccess = logout(username);
+            if(!logoutSuccess.equals("0")){
+                response = "1Logout Error";
+            } else {
+                response = "5";
+            }   //  End Else
+        }   //  End Else
+        return response;
+    }   //  --  End Shutdown Method --
+    //  --  Index Of User Method (-1 for no matches)    --
+    public int indexOfUser(String username){
+        for(int i = 0; i < User.userList.size(); ++i){
+            User testMatch = User.userList.get(i);
+            if(username.equals(testMatch.getUsername())){
+                return i;
+            }   //  End If
+        }   //  End For
+        return -1;
+    }   //  --  End Index Of User Method    --
+    //  --  Parse Input from Network Class Method   --
     // Using 0 and 1 for True and False responses in places applicable, extending beyond 0 and 1 when needed
     public String parseInput(String data){
         System.out.println("Received data: " + data);
@@ -210,6 +225,7 @@ public class Server {
                 result = data.substring(1);
                 String[] info = result.split(":");
                 System.out.println(info.length);
+                String username;
                 System.out.println("3. Remaining info: " + result);
                 switch (operation) {
                     case '0':
@@ -219,11 +235,11 @@ public class Server {
                     case '1':
                         System.out.println("Entering login case.");
                         // gathering user information from the substring
-                        String user = info[0];
+                        username = info[0];
                         String pass = info[1];
-                        System.out.println("User Info: username - " + user + " password - " + pass);
+                        System.out.println("User Info: username - " + username + " password - " + pass);
                         // calling login function here so the response can go back to Network
-                        response = login(user, pass);
+                        response = login(username, pass);
                         //System.out.println(response);
                         break;
                     case '2': // needs register function in Server
@@ -240,15 +256,22 @@ public class Server {
                         break;
                     case '3':
                         System.out.println("Entering passRec.");
-                        String username = info[0];
-                        response = passRecover(username);
+                        username = info[0];
+                        response = passwordRecovery(username);
                         break;
                     case '4':
                         System.out.println("Logout");
+                        username = info[0];
+                        response = logout(username);
                         break;
                     case '5':
                         System.out.println("Disconnect");
-                        response = info[0];
+                        username = info[0];
+                        break;
+                    case '6':
+                        System.out.println("Shutdown");
+                        username = info[0];
+                        response = shutdown(username);
                         break;
                     default : // in case it's not entering a case for some reason so we know
                        response = ("Error with switch loop.");
@@ -267,17 +290,21 @@ public class Server {
         }
         return loggedInUsers;
     }
-
+    public int getNumberOfLoggedInUsers(){
+        return getLoggedInUsers().size();
+    }
     public synchronized List<String> getLockedOutUsers() {
         List<String> LockedOutUsers = new ArrayList<>();
         for (User account : User.userList) {
-            if (account.getStrikes() == 3) {
+            if (account.isLocked()) {
                 LockedOutUsers.add(account.getUsername());
-            }
-        }
+            }   //  End If
+        }   //  End For
         return LockedOutUsers;
     }
-
+    public int getNumberOfLockedOutUsers(){
+        return getLockedOutUsers().size();
+    }
     public synchronized int getNumberOfRegisteredUsers() {
         return User.userList.size();
     }

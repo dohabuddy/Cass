@@ -17,9 +17,10 @@ public class User {
         this.username = user;
         this.password = pass;
         this.email = add;
+        this.connected = false;
         this.logged = false;
-        this.locked = false;
         this.strikes = 0;
+        this.locked = false;
     }
     public User(String username, String password, String email, int connected, int loggedIn, int strikes, int lockedOut) {
         this.username = username;

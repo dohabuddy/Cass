@@ -9,6 +9,7 @@ public class ClientGUI {
     private JFrame loginFrame;
     private JFrame forgottenPassFrame;
     private JFrame registerFrame;
+    private JFrame serverClientFrame;
 
     public static void main(String[] args) {
         new ClientGUI();
@@ -132,8 +133,11 @@ public class ClientGUI {
                 // Grabbing Info
                 String username = usernameField.getText();
                 String password = new String(passwordField.getPassword());
-                // Attempting Login Thru Client
+                //  Attempting Login Through Client
                 String result = client.login(username, password);
+                if(result.charAt(0) == '0'){
+                    openServerClientWindow();
+                }
 
                 // -- Debugging Test
                 //System.out.println("CLIENT GUI received: " + result);
@@ -314,6 +318,79 @@ public class ClientGUI {
         // Show the registration frame
         registerFrame.setLocation(500, 300); // Example position (x: 500, y: 200)
         registerFrame.setVisible(true);
+    }
+    private void openServerClientWindow() {
+        String backgroundPath = "/Users/yasmine/Downloads/imagess.jpeg"; // Update as needed
+        serverClientFrame = new JFrame("ServerClientWindow");
+        serverClientFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        serverClientFrame.setContentPane(new BackgroundPanel(backgroundPath));
+        serverClientFrame.setSize(500, 500);
+        serverClientFrame.setLayout(new GridBagLayout());
+
+        JLabel headingLabel = new JLabel("SERVERCLIENT");
+        headingLabel.setFont(new Font("Times New Roman", Font.BOLD, 24));
+        headingLabel.setForeground(Color.BLUE);
+
+        JButton shutdown = new JButton("Shutdown");
+        JButton logout = new JButton("Logout");
+        JButton resetPassword = new JButton("Reset Password");
+        JButton serverApplication = new JButton("Server Application");
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        serverClientFrame.add(headingLabel, gbc);
+
+        gbc.gridy++;
+        serverClientFrame.add(shutdown, gbc);
+
+        shutdown.addActionListener((ActionEvent e) -> {
+            String response = client.shutdown();
+            System.out.println(response);
+            JOptionPane.showMessageDialog(serverClientFrame, response);
+            serverClientFrame.dispose();
+        });
+        gbc.gridy++;
+
+        serverClientFrame.add(logout, gbc);
+
+        logout.addActionListener((ActionEvent e) -> {
+            String response = client.logout();
+            System.out.println(response);
+            JOptionPane.showMessageDialog(serverClientFrame, response);
+            serverClientFrame.dispose();
+        });
+        gbc.gridy++;
+        serverClientFrame.add(resetPassword, gbc);
+        JPasswordField passwordField = new JPasswordField(20);
+        JLabel passwordLabel = new JLabel("Password:");
+        passwordLabel.setForeground(Color.LIGHT_GRAY);
+
+        resetPassword.addActionListener((ActionEvent e) -> {
+            boolean validPassword = false;
+            String response = "";
+            String newPassword = passwordField.getText();
+            if (!newPassword.isEmpty()) {
+                response = client.updatePassword(newPassword);
+                System.out.println(response);
+                JOptionPane.showMessageDialog(forgottenPassFrame, response);
+            }
+            if(response.equals("0"))serverClientFrame.dispose();
+        });
+        gbc.gridy++;
+        serverClientFrame.add(resetPassword, gbc);
+
+        serverApplication.addActionListener((ActionEvent e) -> {
+            String response = client.serverApplication();
+            System.out.println(response);
+            JOptionPane.showMessageDialog(serverClientFrame, response);
+            serverClientFrame.dispose();
+        });
+
+        serverClientFrame.setVisible(true);
+        serverClientFrame.getRootPane().setDefaultButton(serverApplication);
     }
     // add background
     public class SwingDemo extends JFrame {
