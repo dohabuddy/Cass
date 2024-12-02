@@ -105,7 +105,6 @@ public class ServerGUI extends JFrame {
             }
         }
     }
-
     private void updateServerStatus() {
         if (isServerRunning && serverInstance != null) {
             try {
@@ -144,7 +143,6 @@ public class ServerGUI extends JFrame {
                     JOptionPane.WARNING_MESSAGE);
         }
     }
-
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             ServerGUI gui = new ServerGUI();

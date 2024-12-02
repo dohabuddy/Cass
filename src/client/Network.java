@@ -54,7 +54,7 @@ public class Network {
             dataout.flush();    // Send string to server
             returnMessage = "";    //  Empty string for response
             do {    //  Read for input while the response string is empty
-                socket.setSoTimeout(5000);  //  Timeout after 5 seconds if something goes wrong
+                //socket.setSoTimeout(5000);  //  Timeout after 5 seconds if something goes wrong
                 returnMessage = datain.readLine();
             } while (returnMessage.equals(""));
         } catch (IOException e) {

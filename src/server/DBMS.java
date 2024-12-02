@@ -22,7 +22,6 @@ public class DBMS {
     private final String SCHEMA = "sys";
     private final String TABLE = "users";
     private final String URL = "jdbc:mysql://127.0.0.1:3306/" + SCHEMA;
-    public static ArrayList<String> userList = new ArrayList<>();
     //  Constructor for DBMS
     public DBMS () {
         try {
@@ -40,102 +39,114 @@ public class DBMS {
             handleSQLException(ex);
         }   //  End Catch
     }   //  End DBMS Constructor
-    //  Accesses Preform Operations in MySQL Database
-    public void accessDatabase() {
-        try {
-            // Query will return a ResultSet then get and print all records in the table
-            System.out.println("Original Contents");
-            String SQL = "SELECT * FROM " + TABLE + ";";
-            result = statement.executeQuery(SQL);
-            printResultSet(result);
-        }   //  End try
-        catch (SQLException ex) {
-            //  Handle any errors
-            handleSQLException(ex);
-        }   //  End Catch
-    }   //  End Access Database
-    //  Print Result Set from SQL table
-
-    public String selectUser(String username) {
+    // Centralized synchronization method
+    public void syncUserList() {
+        String query = "SELECT * FROM " + TABLE;
+        try (PreparedStatement ps = connection.prepareStatement(query);
+             ResultSet resultSet = ps.executeQuery()) {
+            User.userList.clear();
+            while (resultSet.next()) {
+                String username = resultSet.getString("Username");
+                String password = resultSet.getString("Password");
+                String email = resultSet.getString("Email");
+                int connected = resultSet.getInt("Connected");
+                int loggedIn = resultSet.getInt("LoggedIn");
+                int strikes = resultSet.getInt("Strikes");
+                int lockedOut = resultSet.getInt("LockedOut");
+                User.userList.add(new User(username, password, email, connected, loggedIn, strikes, lockedOut));
+            }
+            System.out.println("User list synchronized successfully.");
+        } catch (SQLException e) {
+            handleSQLException(e);
+        }
+    }
+    public boolean updateStringField(String fieldName, String newValue, String username) {
+        String query = "UPDATE " + TABLE + " SET " + fieldName + " = ? WHERE Username = ?";
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.setString(1, newValue);
+            ps.setString(2, username);
+            int rowsAffected = ps.executeUpdate();
+            if (rowsAffected > 0) {
+                syncUserList();
+                return true;
+            }
+        } catch (SQLException e) {
+            handleSQLException(e);
+        }
+        return false;
+    }
+    public boolean updateIntField(String fieldName, int newValue, String username) {
+        String query = "UPDATE " + TABLE + " SET " + fieldName + " = ? WHERE Username = ?";
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.setInt(1, newValue);
+            ps.setString(2, username);
+            int rowsAffected = ps.executeUpdate();
+            if (rowsAffected > 0) {
+                syncUserList();
+                return true;
+            }
+        } catch (SQLException e) {
+            handleSQLException(e);
+        }
+        return false;
+    }
+    public User selectUser(String username) {
         String query = "SELECT * FROM " + TABLE + " WHERE Username = ?";
         try (PreparedStatement ps = connection.prepareStatement(query)) {
             ps.setString(1, username);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return rs.getString("Username");
+                    return new User(rs.getString("Username"), rs.getString("Password"), rs.getString("Email"));
                 }
             }
         } catch (SQLException e) {
             handleSQLException(e);
         }
-        return "User not found";
+        return null;
     }
     public boolean deleteUser(String username) {
         String query = "DELETE FROM " + TABLE + " WHERE Username = ?";
         try (PreparedStatement ps = connection.prepareStatement(query)) {
             ps.setString(1, username);
             int rowsAffected = ps.executeUpdate();
-            return rowsAffected > 0;
+            if (rowsAffected > 0) {
+                syncUserList();
+                return true;
+            }
         } catch (SQLException e) {
             handleSQLException(e);
         }
         return false;
     }
     public boolean registerUser(User user) {
-        if (selectUser(user.getUsername()) != "User not found") {
+        if (selectUser(user.getUsername()) != null) {
             System.out.println("Username already exists!");
             return false;
         }
-        String query = "INSERT INTO " + TABLE + " (Username, Password, Connected, LoggedIn, Strikes) VALUES (?, ?, 0, 0, 0)";
+        String query = "INSERT INTO " + TABLE + " (Username, Password, Email) VALUES (?, ?, ?)";
         try (PreparedStatement ps = connection.prepareStatement(query)) {
             ps.setString(1, user.getUsername());
-            ps.setString(2, user.getPass());
+            ps.setString(2, user.getPassword());
+            ps.setString(3, user.getEmail());
             ps.executeUpdate();
-            close();
-            loadUserList();
+            syncUserList();
             return true;
         } catch (SQLException e) {
             handleSQLException(e);
         }
         return false;
     }
-    public boolean updateUserPassword(String username, String password) {
-        String querySelect = "SELECT Password FROM " + TABLE + " WHERE Username = ?";
+    public boolean updateUserPassword(User user, String newPassword, DBMS userDB) {
         String queryUpdate = "UPDATE " + TABLE + " SET Password = ? WHERE Username = ?";
-        try (PreparedStatement psSelect = connection.prepareStatement(querySelect);
-             PreparedStatement psUpdate = connection.prepareStatement(queryUpdate)) {
-
-            // Check if the user exists by selecting their current password
-            psSelect.setString(1, username);
-            try (ResultSet rs = psSelect.executeQuery()) {
-                if (rs.next()) {
-                    // If user exists, update their password
-                    psUpdate.setString(1, password); // Set the new password
-                    psUpdate.setString(2, username); // Set the username condition
-                    psUpdate.executeUpdate();
-                    return true;
-                }
-            }
-        } catch (SQLException e) {
-            handleSQLException(e);
-        }
-        return false; // Return false if the user doesn't exist or the update fails
-    }
-    public boolean updateUserStrikes(String username) {
-        String querySelect = "SELECT Strikes FROM " + TABLE + " WHERE Username = ?";
-        String queryUpdate = "UPDATE " + TABLE + " SET Strikes = ? WHERE Username = ?";
-        try (PreparedStatement psSelect = connection.prepareStatement(querySelect);
-             PreparedStatement psUpdate = connection.prepareStatement(queryUpdate)) {
-
-            psSelect.setString(1, username);
-            try (ResultSet rs = psSelect.executeQuery()) {
-                if (rs.next()) {
-                    int strikes = rs.getInt("Strikes") + 1;
-                    psUpdate.setInt(1, strikes);
-                    psUpdate.setString(2, username);
-                    psUpdate.executeUpdate();
-                    return true;
-                }
+        try (PreparedStatement ps = connection.prepareStatement(queryUpdate)) {
+            ps.setString(1, newPassword);
+            ps.setString(2, user.getUsername());
+            int rowsAffected = ps.executeUpdate();
+            if (rowsAffected > 0) {
+                user.resetStrikes(userDB);
+                user.setLocked(false, userDB);
+                syncUserList(); // Synchronize after update
+                return true;
             }
         } catch (SQLException e) {
             handleSQLException(e);
@@ -191,24 +202,14 @@ public class DBMS {
             }
         }
     }
-    public void loadUserList() {
-        String query = "SELECT * FROM " + TABLE;
-        try (PreparedStatement ps = connection.prepareStatement(query);
-             ResultSet resultSet = ps.executeQuery()) {
-            // Clear existing list to prevent duplicates
-            User.userList.clear();
-            while (resultSet.next()) {
-                // Retrieve user data from columns
-                String username = resultSet.getString("Username");
-                String password = resultSet.getString("Password");
-                String email = resultSet.getString("Email");
-                // Create a new User object and add it to the list
-                User user = new User(username, password, email);
-                User.userList.add(user);
-            }
-            System.out.println("User list loaded successfully!");
-        } catch (SQLException e) {
-            handleSQLException(e);
+    public void disconnectAll(DBMS userDB){
+        for(int i = 0; i < User.userList.size(); ++i){
+            User.userList.get(i).setConnected(false, userDB);
+        }
+    }
+    public void logoutAll(DBMS userDB){
+        for(int i = 0; i < User.userList.size(); ++i){
+            User.userList.get(i).setLogged(false, userDB);
         }
     }
     public void close() {

@@ -58,7 +58,7 @@ public class Client {
                     System.out.println(outputGUI);  //  Display Logic
                     clientIsLoggedIn = true;
                     break;
-                case '1':   //  '1'=Failed, wrong/new username
+                case '1':   //  '1'=Failed, no matching username
                     outputGUI = "No username matching our records.";
                     System.out.println(outputGUI);  //  Display Logic
                     break;
@@ -71,9 +71,13 @@ public class Client {
                     System.out.println(outputGUI);  //  Display Logic
                     break;
                 case '4':   //  '4'=Failed, wrong password and plus one strike
-                    String info = response.substring(1);
-                    String[] strikes = info.split(":");
-                    outputGUI = "Password is incorrect. You now have " + strikes[0] + " strike(s).\nYour account will lock at 3 strikes.\nYou have " + strikes[1] +  " attempts remaining." ;
+                    char strikesData = response.charAt(1);
+                    int strikes = strikesData - '0';
+                    outputGUI = "Password is incorrect. You now have " + strikes + " strike(s).\nYour account will lock at 3 strikes.\nYou have " + (3 - strikes) +  " attempts remaining." ;
+                    System.out.println(outputGUI);  //  Display Logic
+                    break;
+                default:
+                    outputGUI = "Error";
                     System.out.println(outputGUI);  //  Display Logic
                     break;
             }   //  End Switch

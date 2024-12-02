@@ -25,7 +25,7 @@ public class Server {
         //  Construct the list of active client threads
         clientConnections = new Vector<>();
         this.userDB = new DBMS();
-        userDB.loadUserList();
+        userDB.syncUserList();
         userDB.printUserList();
     }   //  --  End Server Constructor  --
     //  --  Start Server From GUI Method    --
@@ -45,6 +45,8 @@ public class Server {
                 connection.interrupt();  // Assuming MultiThread extends Thread
             }
             clientConnections.clear();  // Clear the list of client connections
+            userDB.disconnectAll(userDB);
+            userDB.logoutAll(userDB);
 
             System.out.println("Server stopped.");
         } catch (IOException e) {
@@ -117,57 +119,60 @@ public class Server {
     }   //  --  End Listen Method   --
     //  -- SERVER OPERATIONS --
     //  -- Log in to Server Method  --
-    public String login(String user, String pass){
+    public String login(String username, String pass) {
         //  Login variables
         String response = "";
-        userDB.loadUserList();
-        for(int i = 0; i <User.userList.size(); i++){   //  Check user list
-            User account = User.userList.get(i);
-            if(!user.equals(account.getUsername())){ // if user doesn't exist / match
-                response = "1"; // no user exists
-            } else if (account.isLocked()){ // checks if acc is locked out
+        int i = 0;
+        while (i < User.userList.size()) {   //  Check username list
+            User test = User.userList.get(i);
+            User account = null;
+            int index = -1;
+            if (username.equals(test.getUsername())) {
+                index = i;
+                account = User.userList.get(index);
+            }   //  End If
+            if (index == -1 || account == null) {
+                response = "1"; //  No username exists
+            } else if (account.isLocked()) { // checks if acc is locked out
                 response = "2"; // account is locked
                 break;
-            } else if (account.isLogged()){ // checks if account is already signed in
+            } else if (account.isLogged()) { // checks if account is already signed in
                 response = "3"; // account is already signed in
                 break;
-            } else if (!pass.equals(account.getPass())){ // checks if pass matches
-                int strikes = account.getStrikes();
-                if(strikes == 3){
-                    account.setLocked(true);
-                    response = "2";
-                } else {
-                    int attempts = 3 - strikes;
-                    response = "4" + strikes + ":" + attempts;
-                    account.setStrikes(0);
-                }
-            } else { // successful login
-                account.setLogged(true);
+            } else if (!account.getPassword().equals(pass)) {
+                account.addStrike(userDB);
+                response = "4" + account.getStrikes(); //  Incorrect password plus one strike
+                break;
+            } else {    //  Successful login
+                account.setLogged(true, userDB);
+                account.resetStrikes(userDB);
+                account.setConnected(true, userDB);
                 response = "0";
+                break;
+            }   //  End Else
+            ++i;
+        }   //  End While
+        return response;
+    }   //  --  End Login Method    --
+    // tester password recovery function -- working with mock accounts
+    public String passRecover(String user) {
+        SendEmail email = new SendEmail();
+        String response = "";
+        for (int i = 0; i < User.userList.size(); i++) {
+            User account = User.userList.get(i);
+            if (!user.equals(account.getUsername())) {
+                response = "1"; // user does not exist
+            } else {
+                String address = account.getEmail(); // getting user email
+                System.out.println(address);    //  Display Logic
+                String newPassword = email.generateEmail(address); // sending email
+                System.out.println(newPassword);    //  Display Logic
+                userDB.updateUserPassword(account, newPassword, userDB);    // setting accounts password to temp password
+                response = "0"; //  Sending back to parseInput
                 break;
             }
         }
         return response;
-    }
-    // tester password recovery function -- working with mock accounts
-    public String passRecover(String user) {
-        SendEmail email = new SendEmail();
-        String res = "";
-        for (int i = 0; i < User.userList.size(); i++) {
-            User account = User.userList.get(i);
-            if (!user.equals(account.getUsername())) {
-                res = "1"; // user does not exist
-            } else {
-                String address = account.getEmail(user); // getting user email
-                System.out.println(address);    //  Display Logic
-                String newPass = email.generateEmail(address); // sending email
-                System.out.println(newPass);    //  Display Logic
-                userDB.updateUserPassword(user,newPass);    // setting accounts password to temp password
-                res = "0"; // sending back to parseInput
-                break;
-            }
-        }
-        return res;
     }
     // tester register function
     public String register(String username, String password, String email){
@@ -185,6 +190,7 @@ public class Server {
         if (!userExists){
             User account = new User(username, password, email); // create new user
             userDB.registerUser(account); // add new user to arraylist
+            userDB.syncUserList();
             System.out.println(User.userList.size());
             res = "0"; // successful registration
         }
@@ -265,7 +271,7 @@ public class Server {
     public synchronized List<String> getLockedOutUsers() {
         List<String> LockedOutUsers = new ArrayList<>();
         for (User account : User.userList) {
-            if (!account.isLogged()) {
+            if (account.getStrikes() == 3) {
                 LockedOutUsers.add(account.getUsername());
             }
         }
@@ -274,5 +280,9 @@ public class Server {
 
     public synchronized int getNumberOfRegisteredUsers() {
         return User.userList.size();
+    }
+    public String serverApplication(){
+        String result = "Server Use!";
+        return result;
     }
 }
