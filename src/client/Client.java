@@ -24,18 +24,19 @@ public class Client {
         String request = "0" + HOST;   //  Append operation character key
         String response = "";
         if (clientIsConnected) {  //  Prevent connecting if connection already exists
-            System.out.println("Already connected");    //  Display Logic
             outputGUI = "Already connected to " + HOST;
+            System.out.println(outputGUI);    //  Display Logic
+
         } else {    //  Attempt connection
             clientConnection = new Network(HOST);   //  Client creates connection request
             response = clientConnection.send(request); //   Client sends connect request
             if (response == null) {  //  Failed connection
-                System.out.println("Error connecting.");    //  Display Logic
                 outputGUI = "Error connecting to " + HOST;
+                System.out.println(outputGUI);    //  Display Logic
                 clientIsConnected = false;
             } else {    //  Successful connection
-                System.out.println("Successful connection.");   //  Display Logic
                 outputGUI = "Connection successful to " + HOST;
+                System.out.println(outputGUI);   //  Display Logic
                 clientIsConnected = true;
             }   //  End Else
         }   //  End Else

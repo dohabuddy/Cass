@@ -5,7 +5,10 @@ import java.net.*;
 import java.util.*;
 
 public class Server {
-    //  Instantiate list for active client threads
+    public static void main(String[] args) {
+        startServer();
+    }
+        //  Instantiate list for active client threads
     private static Vector<MultiThread> clientConnections;
     //  Socket waits for client connections
     public static ServerSocket serversocket;
@@ -18,11 +21,13 @@ public class Server {
     public Server() {
         //  Construct the list of active client threads
         clientConnections = new Vector<>();
+        DBMS.loadUserDatabase();
+        User.printUserList();
         //  Listen for incoming connection requests
         listen();
     }   //  --  End Server Constructor  --
     //  --  Start Server From GUI Method    --
-    public void startServer(){
+    public static void startServer(){
         new Server();
     }   //  --  End Start Server Method --
     //  --  Get Port Method --
@@ -84,10 +89,10 @@ public class Server {
             User account = User.userList.get(i);
             if(!user.equals(account.getUser())){ // if user doesn't exist / match
                 response = "1"; // no user exists
-            } else if (account.getLocked()){ // checks if acc is locked out
+            } else if (account.isLocked()){ // checks if acc is locked out
                 response = "2"; // account is locked
                 break;
-            } else if (account.getLogged()){ // checks if account is already signed in
+            } else if (account.isLogged()){ // checks if account is already signed in
                 response = "3"; // account is already signed in
                 break;
             } else if (!pass.equals(account.getPass())){ // checks if pass matches
@@ -101,7 +106,7 @@ public class Server {
                     account.setStrikes(0);
                 }
             } else { // successful login
-                account.setLog(true);
+                account.setLogged(true);
                 response = "0";
                 break;
             }
@@ -118,9 +123,11 @@ public class Server {
             if (!user.equals(account.getUser())) {
                 res = "1"; // user does not exist
             } else {
-                String address = account.getEmail(); // getting user email
+                String address = account.getEmail(user); // getting user email
+                System.out.println(address);    //  Display Logic
                 String newPass = email.generateEmail(address); // sending email
-                account.setPass(newPass); // setting accounts password to temp password
+                System.out.println(newPass);    //  Display Logic
+                 // setting accounts password to temp password
                 res = "0"; // sending back to parseInput
                 break;
             }
@@ -159,23 +166,23 @@ public class Server {
         if(data != null) {
             operation = data.charAt(0); // grabbing operation from string
             System.out.println("1. Operation sent: " + operation);
-            if(data.length() > 1) {
-                //System.out.println("2. Entering if loop.");
+            if(!data.isEmpty()) {
+                System.out.println("2. Entering if loop.");
                 result = data.substring(1);
                 String[] info = result.split(":");
-                //System.out.println(info.length);
-                //System.out.println("3. Remaining info: " + result);
+                System.out.println(info.length);
+                System.out.println("3. Remaining info: " + result);
                 switch (operation) {
                     case '0':
                         // we wouldn't get here without the connection working so just say it's working?
                         response = "0"; // Connection successful
                         break;
                     case '1':
-                        //System.out.println("Entering login case.");
+                        System.out.println("Entering login case.");
                         // gathering user information from the substring
                         String user = info[0];
                         String pass = info[1];
-                        //System.out.println("User Info: username - " + user + " password - " + pass);
+                        System.out.println("User Info: username - " + user + " password - " + pass);
                         // calling login function here so the response can go back to Network
                         response = login(user, pass);
                         //System.out.println(response);
@@ -209,7 +216,7 @@ public class Server {
                 }   //  End Switch (operation)
             }   //  End If (data length > 1)
         }   //  End If (Data is not null)
-        //System.out.println("SERVER sending: " + response);
+        System.out.println("SERVER sending: " + response);
         return response;
     }
 }

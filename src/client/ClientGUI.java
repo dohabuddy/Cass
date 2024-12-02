@@ -344,4 +344,3 @@ public class ClientGUI {
 
 
 //add IP section
-

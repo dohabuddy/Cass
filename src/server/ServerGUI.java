@@ -78,13 +78,12 @@ public class ServerGUI {
 
     private void startServer() {
         log("Starting server...");
-        server = new Server();
-        new Thread(server::listen).start(); // Start the server in a new thread
         connectionStatusLabel.setText("Connection Status: Running");
         connectionStatusLabel.setForeground(Color.GREEN);
         startServerButton.setEnabled(false);
         stopServerButton.setEnabled(true);
         log("Server started on port " + Server.PORT);
+        Server.startServer();
     }
 
     private void stopServer() {
