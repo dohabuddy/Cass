@@ -47,7 +47,7 @@ public class MultiThread extends Thread {
                     //System.out.println("MT txtOut = " + txtOut); // -- debugging in case of response errors
                     if (txtOut == null || txtOut.isEmpty()) {
                         System.out.println("Response is empty.");
-                        socket.setSoTimeout(1000); // prevents client from waiting for forever and ever and ever
+                        socket.setSoTimeout(5000); // prevents client from waiting for forever and ever and ever
                     } else {
                         if (txtOut.equals("5")) { // Checking for a disconnect message before responding
                             // Writing Final Response
@@ -55,6 +55,7 @@ public class MultiThread extends Thread {
                             dataout.flush();
 
                             //Closing Streams
+                            clientIsConnected = false;
                             datain.close();
                             server.removeID(id);
 

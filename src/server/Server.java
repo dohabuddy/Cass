@@ -195,7 +195,7 @@ public class Server {
             if(!logoutSuccess.equals("0")){
                 response = "1Logout Error";
             } else {
-                response = "5";
+                response = "disconnect";
             }   //  End Else
         }   //  End Else
         return response;
@@ -266,7 +266,7 @@ public class Server {
                         break;
                     case '5':
                         System.out.println("Disconnect");
-                        username = info[0];
+                        response = "5";
                         break;
                     case '6':
                         System.out.println("Shutdown");

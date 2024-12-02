@@ -35,7 +35,7 @@ public class Client {
                 System.out.println(outputGUI);    //  Display Logic
                 clientIsConnected = false;
             } else {    //  Successful connection
-                outputGUI = "Connection successful to " + HOST;
+                outputGUI = "0Connection successful to " + HOST;
                 System.out.println(outputGUI);   //  Display Logic
                 clientIsConnected = true;
             }   //  End Else
@@ -194,7 +194,7 @@ public class Client {
         if (clientIsConnected) {    //  If Client is connected
             response = clientConnection.send(request); // Send disconnect request
             System.out.println("CLIENT receive: " + response);
-            if (response.equals("disconnect")){ //  If server disconnects
+            if (response.charAt(0) == '0'){ //  If server disconnects
                 outputGUI = "Disconnected from " + HOST;
                 System.out.println(outputGUI);  //  Display Logic
                 clientIsConnected = false;
