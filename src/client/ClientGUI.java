@@ -204,13 +204,13 @@ public class ClientGUI {
 
     private void showUpdatePasswordWindow() {
         updatePasswordFrame = new JFrame("Update Password");
-        updatePasswordFrame.setSize(300, 200);
+        updatePasswordFrame.setSize(400, 200);
         updatePasswordFrame.setLayout(new GridBagLayout());
 
         JLabel newPasswordLabel = new JLabel("New Password:");
         JPasswordField newPasswordField = new JPasswordField(20);
         JLabel verifyPasswordLabel = new JLabel("Verify Password:");
-        JPasswordField verifyPasswordField = new JPasswordField(20);
+        JPasswordField verifyPasswordField = new JPasswordField(30);
         JButton updateButton = new JButton("Update");
 
         GridBagConstraints gbc = new GridBagConstraints();
