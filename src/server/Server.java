@@ -302,6 +302,9 @@ public class Server {
         }   //  End For
         return LockedOutUsers;
     }
+    public int getNumberOfConnections(){
+        return clientConnections.size();
+    }
     public int getNumberOfLockedOutUsers(){
         return getLockedOutUsers().size();
     }

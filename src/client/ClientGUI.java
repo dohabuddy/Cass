@@ -10,6 +10,7 @@ public class ClientGUI {
 
     public static void main(String[] args) {
         new ClientGUI();
+        new ClientGUI();
     }
     public class BackgroundPanel extends JPanel {
         private Image backgroundImage;
