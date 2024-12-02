@@ -22,11 +22,12 @@ public class DBMS {
     private final String SCHEMA = "sys";
     private final String TABLE = "users";
     private final String URL = "jdbc:mysql://127.0.0.1:3306/" + SCHEMA;
+    public static ArrayList<String> userList = new ArrayList<>();
     //  Constructor for DBMS
-    public DBMS (String username, String password) {
+    public DBMS () {
         try {
             // Make connection to the database
-            connection = DriverManager.getConnection(URL, username, password);
+            connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
             // These will Send queries to the database
             statement = connection.createStatement();
             result = statement.executeQuery("SELECT VERSION()");
@@ -47,34 +48,6 @@ public class DBMS {
             String SQL = "SELECT * FROM " + TABLE + ";";
             result = statement.executeQuery(SQL);
             printResultSet(result);
-//            // Insert new user into the table
-//            System.out.println("Inserted Contents");    //  Display Logic
-//            String username = "'testUsername'"; // SQL expects strings to be single quoted
-//            String password = "'testUsername'";
-//            int connected = 0;
-//            int loggedIn = 0;
-//            int strikes = 0;
-//            statement.executeUpdate("INSERT INTO " + TABLE + " VALUE(" + username + ", " + password + ", " + connected + ", " + loggedIn + "," +  strikes + ");");
-//            // Get and print all records in the table
-//            result = statement.executeQuery("SELECT * FROM " + TABLE + ";");
-//            printResultSet(result);
-//            // Modify a record in the table and get the result set of records
-//            result = statement.executeQuery("SELECT * FROM " + TABLE + " WHERE Username=" + username + ";");
-//            //  Move the iterator to the record, if there is no record this will throw an exception???
-//            result.next();
-//            //  Get the strikes column and convert it to integer
-//            strikes = Integer.parseInt(result.getString(5));
-//            System.out.println("Updated Contents");
-//            statement.executeUpdate("UPDATE " + TABLE + " SET strikes=" + (strikes + 1) + " WHERE Username=" + username + ";");
-//            // Get and print all records in the table
-//            result = statement.executeQuery("SELECT * FROM " + TABLE + " WHERE Username=" + username + ";");
-//            printResultSet(result);
-//            //  Delete Record
-//            result = statement.executeQuery("DELETE * FROM " + TABLE + " WHERE Username=" + username + ";");
-//            // Get and print all records in the table
-//            result = statement.executeQuery("SELECT * FROM " + TABLE + " WHERE Username=" + username + ";");
-//            System.out.println("should be blank");
-//            printResultSet(result);
         }   //  End try
         catch (SQLException ex) {
             //  Handle any errors
@@ -190,7 +163,7 @@ public class DBMS {
             handleSQLException(ex);
         }   //  End Catch
     }   //  End Print Result
-    public static void logUser(ArrayList<String> userData){
+    public void logUser(ArrayList<String> userData){
         try {
             if (userData.size() >= 3) {  // Ensure enough fields are available
                 User newUser = new User(userData.get(0), userData.get(1), userData.get(2));
@@ -202,13 +175,36 @@ public class DBMS {
             System.out.println("Failed to create or log user: " + e.getMessage());
         }
     }
-    //  -- Load User Database Method    --
-    public static void loadUserDatabase() {
-        // Make the JDBC connection (Java Database Connectivity)
-        DBMS users = new DBMS(USERNAME, PASSWORD);
-        users.accessDatabase();
-    }   //  --  End Load User Database  --
-    //  --  Method to close connection  --
+    public void printUserList() {
+        if (User.userList.isEmpty()) {
+            System.out.println("No users available.");
+        } else {
+            System.out.println("Current Users:");
+            for (User user : User.userList) {
+                System.out.println(user.getUserDetails());
+            }
+        }
+    }
+    public void loadUserList() {
+        String query = "SELECT * FROM " + TABLE;
+        try (PreparedStatement ps = connection.prepareStatement(query);
+             ResultSet resultSet = ps.executeQuery()) {
+            // Clear existing list to prevent duplicates
+            User.userList.clear();
+            while (resultSet.next()) {
+                // Retrieve user data from columns
+                String username = resultSet.getString("Username");
+                String password = resultSet.getString("Password");
+                String email = resultSet.getString("Email");
+                // Create a new User object and add it to the list
+                User user = new User(username, password, email);
+                User.userList.add(user);
+            }
+            System.out.println("User list loaded successfully!");
+        } catch (SQLException e) {
+            handleSQLException(e);
+        }
+    }
     public void close() {
         try {
             if (connection != null && !connection.isClosed()) {

@@ -17,14 +17,17 @@ public class Server {
     // Port Server Will Be Listening To
     public static final int PORT = 8000;
     //public SendEmail email = new SendEmail();
+    DBMS userDB;
     // -- Server Constructor  --
     public Server() {
         //  Construct the list of active client threads
         clientConnections = new Vector<>();
-        DBMS.loadUserDatabase();
-        User.printUserList();
+        this.userDB = new DBMS();
+        userDB.loadUserList();
+        userDB.printUserList();
         //  Listen for incoming connection requests
         listen();
+        userDB.close();
     }   //  --  End Server Constructor  --
     //  --  Start Server From GUI Method    --
     public static void startServer(){
@@ -85,6 +88,7 @@ public class Server {
     public String login(String user, String pass){
         //  Login variables
         String response = "";
+        userDB.loadUserList();
         for(int i = 0; i <User.userList.size(); i++){   //  Check user list
             User account = User.userList.get(i);
             if(!user.equals(account.getUser())){ // if user doesn't exist / match
@@ -113,7 +117,6 @@ public class Server {
         }
         return response;
     }
-
     // tester password recovery function -- working with mock accounts
     public String passRecover(String user) {
         SendEmail email = new SendEmail();
@@ -127,14 +130,13 @@ public class Server {
                 System.out.println(address);    //  Display Logic
                 String newPass = email.generateEmail(address); // sending email
                 System.out.println(newPass);    //  Display Logic
-                 // setting accounts password to temp password
+                userDB.updateUserPassword(user,newPass);    // setting accounts password to temp password
                 res = "0"; // sending back to parseInput
                 break;
             }
         }
         return res;
     }
-
     // tester register function
     public String register(String user, String pass, String add){
         String res = "";
@@ -156,7 +158,6 @@ public class Server {
         }
         return res;
     }
-
     // Using 0 and 1 for True and False responses in places applicable, extending beyond 0 and 1 when needed
     public String parseInput(String data){
         System.out.println("Received data: " + data);

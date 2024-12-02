@@ -1,212 +1,207 @@
+
 package server;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.util.Vector;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.*;
 
-public class ServerGUI {
-    private JFrame serverFrame;
-    private JTextArea logArea;
-    private JLabel connectionStatusLabel;
-    private JLabel activeConnectionsLabel;
-    private JList<String> clientConnectionsList;
-    private DefaultListModel<String> connectionsModel;
-    private JButton startServerButton;
-    private JButton stopServerButton;
+public class ServerGUI extends JFrame {
+    private JButton startButton;
+    private JButton stopButton;
+    private JTable connectedUsersTable;
+    private DefaultTableModel tableModel;
+    private JLabel statusLabel;
+    private JLabel registeredAccountsLabel;
 
-    private Server server;
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(ServerGUI::new);
-    }
+    private Server serverInstance;
+    private DBMS databaseManager;
+    private Thread serverThread;
+    private boolean isServerRunning = false;
 
     public ServerGUI() {
-        setupGUI();
+        // Initialize the GUI
+        setTitle("Server Management Console");
+        setSize(600, 400);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        // Create control panel
+        JPanel controlPanel = new JPanel();
+        startButton = new JButton("Start Server");
+        stopButton = new JButton("Stop Server");
+        stopButton.setEnabled(false);
+
+        controlPanel.add(startButton);
+        controlPanel.add(stopButton);
+
+        // Create status panel
+        JPanel statusPanel = new JPanel();
+        statusLabel = new JLabel("Server Status: Stopped");
+        registeredAccountsLabel = new JLabel("Registered Accounts: 0");
+        statusPanel.add(statusLabel);
+        statusPanel.add(registeredAccountsLabel);
+
+        // Create connected users table
+        String[] columnNames = {"Client ID", "Username", "Connection Time"};
+        tableModel = new DefaultTableModel(columnNames, 0);
+        connectedUsersTable = new JTable(tableModel);
+        JScrollPane tableScrollPane = new JScrollPane(connectedUsersTable);
+
+        // Add components to frame
+        add(controlPanel, BorderLayout.NORTH);
+        add(tableScrollPane, BorderLayout.CENTER);
+        add(statusPanel, BorderLayout.SOUTH);
+
+        // Add action listeners
+        setupActionListeners();
     }
 
-    private void setupGUI() {
-        serverFrame = new JFrame("Server Dashboard");
-        serverFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        serverFrame.setSize(600, 400);
-        serverFrame.setLayout(new BorderLayout());
+    private void setupActionListeners() {
+        startButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                startServer();
+            }
+        });
 
-        // Top panel: Connection Status
-        JPanel topPanel = new JPanel(new GridLayout(2, 1));
-        connectionStatusLabel = new JLabel("Connection Status: Stopped", SwingConstants.CENTER);
-        connectionStatusLabel.setForeground(Color.RED);
-        connectionStatusLabel.setFont(new Font("Arial", Font.BOLD, 16));
-
-        activeConnectionsLabel = new JLabel("Active Connections: 0", SwingConstants.CENTER);
-        activeConnectionsLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-
-        topPanel.add(connectionStatusLabel);
-        topPanel.add(activeConnectionsLabel);
-
-        // Center panel: Log area and client connections list
-        JPanel centerPanel = new JPanel(new GridLayout(1, 2));
-
-        logArea = new JTextArea();
-        logArea.setEditable(false);
-        JScrollPane logScrollPane = new JScrollPane(logArea);
-
-        connectionsModel = new DefaultListModel<>();
-        clientConnectionsList = new JList<>(connectionsModel);
-        JScrollPane connectionsScrollPane = new JScrollPane(clientConnectionsList);
-
-        centerPanel.add(logScrollPane);
-        centerPanel.add(connectionsScrollPane);
-
-        // Bottom panel: Start and Stop server buttons
-        JPanel bottomPanel = new JPanel();
-        startServerButton = new JButton("Start Server");
-        stopServerButton = new JButton("Stop Server");
-        stopServerButton.setEnabled(false);
-
-        startServerButton.addActionListener(e -> startServer());
-        stopServerButton.addActionListener(e -> stopServer());
-
-        bottomPanel.add(startServerButton);
-        bottomPanel.add(stopServerButton);
-
-        // Add panels to the frame
-        serverFrame.add(topPanel, BorderLayout.NORTH);
-        serverFrame.add(centerPanel, BorderLayout.CENTER);
-        serverFrame.add(bottomPanel, BorderLayout.SOUTH);
-
-        serverFrame.setVisible(true);
+        stopButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                stopServer();
+            }
+        });
     }
 
     private void startServer() {
-        log("Starting server...");
-        connectionStatusLabel.setText("Connection Status: Running");
-        connectionStatusLabel.setForeground(Color.GREEN);
-        startServerButton.setEnabled(false);
-        stopServerButton.setEnabled(true);
-        log("Server started on port " + Server.PORT);
-        Server.startServer();
+        if (!isServerRunning) {
+            // Initialize database connection using getter methods for credentials
+            try {
+                Server.startServer();
+                //updateRegisteredAccountsCount();
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this,
+                        "Could not connect to database: " + e.getMessage(),
+                        "Database Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Start server in a separate thread
+            serverThread = new Thread(() -> {
+                serverInstance = new Server();
+                serverInstance.listen();
+            });
+            serverThread.start();
+
+            // Update UI
+            statusLabel.setText("Server Status: Running");
+            startButton.setEnabled(false);
+            stopButton.setEnabled(true);
+            isServerRunning = true;
+
+            // Start a thread to update connected users
+            //startConnectionMonitorThread();
+        }
     }
 
     private void stopServer() {
-        log("Stopping server...");
-        if (server != null && Server.serversocket != null && !Server.serversocket.isClosed()) {
+        if (isServerRunning) {
             try {
-                Server.serversocket.close();
-                connectionStatusLabel.setText("Connection Status: Stopped");
-                connectionStatusLabel.setForeground(Color.RED);
-                stopServerButton.setEnabled(false);
-                startServerButton.setEnabled(true);
-                log("Server stopped.");
+                // Close server socket
+                if (Server.serversocket != null) {
+                    Server.serversocket.close();
+                }
+
+                // Interrupt server thread
+                if (serverThread != null) {
+                    serverThread.interrupt();
+                }
+
+                // Clear connected users
+                tableModel.setRowCount(0);
+
+                // Update UI
+                statusLabel.setText("Server Status: Stopped");
+                startButton.setEnabled(true);
+                stopButton.setEnabled(false);
+                isServerRunning = false;
             } catch (Exception e) {
-                log("Error stopping server: " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }
+//
+//    private void startConnectionMonitorThread() {
+//        Thread monitorThread = new Thread(() -> {
+//            while (isServerRunning) {
+//                // Update connected users
+//                updateConnectedUsers();
+//
+//                // Update registered accounts count
+//                updateRegisteredAccountsCount();
+//
+//                try {
+//                    Thread.sleep(5000); // Update every 5 seconds
+//                } catch (InterruptedException e) {
+//                    break;
+//                }
+//            }
+//        });
+//        monitorThread.start();
+//    }
+//
+//    private void updateConnectedUsers() {
+//        SwingUtilities.invokeLater(() -> {
+//            // Clear existing table
+//            tableModel.setRowCount(0);
+//
+//            // Populate table with current connections
+//            if (serverInstance != null && Server.clientConnections != null) {
+//                for (MultiThread connection : Server.clientConnections) {
+//                    User user = serverInstance.getUserByConnectionId((int) connection.getId()); // Cast to long if needed
+//                    if (user != null) {
+//                        tableModel.addRow(new Object[] {
+//                                (int) connection.getId(),                   // Cast to int if getId() returns a long
+//                                user.getUser(),                             // Username
+//                                serverInstance.getClientConnectionTime((int) connection.getId()) // Cast to long if needed
+//                        });
+//                    }
+//                }
+//            }
+//        });
+//    }
+//
+//    private void updateRegisteredAccountsCount() {
+//        try {
+//            // Query to count registered accounts
+//            String countQuery = "SELECT COUNT(*) FROM users";
+//            Connection conn = DriverManager.getConnection(
+//                    "jdbc:mysql://127.0.0.1:3306/sys",
+//                    DBMS.getUsernameSQL(), // Use the getter method
+//                    DBMS.getPasswordSQL()  // Use the getter method
+//            );
+//            Statement stmt = conn.createStatement();
+//            ResultSet rs = stmt.executeQuery(countQuery);
+//
+//            if (rs.next()) {
+//                int accountCount = rs.getInt(1);
+//                registeredAccountsLabel.setText("Registered Accounts: " + accountCount);
+//            }
+//
+//            conn.close();
+//        } catch (SQLException e) {
+//            registeredAccountsLabel.setText("Registered Accounts: N/A");
+//        }
+//    }
 
-    private void log(String message) {
-        logArea.append(message + "\n");
-        logArea.setCaretPosition(logArea.getDocument().getLength());
-    }
-
-    public void updateConnectionList(Vector<MultiThread> connections) {
-        connectionsModel.clear();
-        for (MultiThread connection : connections) {
-            connectionsModel.addElement("Client ID: " + connection.getId());
-        }
-        activeConnectionsLabel.setText("Active Connections: " + connections.size());
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            ServerGUI gui = new ServerGUI();
+            gui.setVisible(true);
+        });
     }
 }
-
-//import javax.swing.*;
-//import java.awt.*;
-//import java.io.*;
-//import java.net.*;
-//import java.util.*;
-//
-//public class ServerGUI {
-//    private JFrame serverFrame;
-//    private JTextArea logArea;
-//    private JLabel connectionStatusLabel;
-//    private JLabel totalAccountsLabel;
-//    private JLabel loggedInUsersLabel;
-//    private JList<String> loggedInUsersList;
-//    private DefaultListModel<String> loggedInUsersModel;
-//    private JButton stopServerButton;
-//
-//    private ServerSocket serverSocket;
-//    private boolean isRunning = true;
-//
-//    public static void main(String[] args) {
-//        SwingUtilities.invokeLater(ServerGUI::new);
-//    }
-//
-//    public ServerGUI() {
-//        setupGUI();
-//        loadAccounts();
-//        //startServer();
-//    }
-//
-//    private void setupGUI() {
-//        // Main server frame
-//        serverFrame = new JFrame("Server Dashboard");
-//        serverFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//        serverFrame.setSize(500, 400);
-//        serverFrame.setLayout(new BorderLayout());
-//
-//        // Top panel: Connection Status
-//        JPanel topPanel = new JPanel(new GridLayout(3, 1));
-//        connectionStatusLabel = new JLabel("Connection Status: Running", SwingConstants.CENTER);
-//        connectionStatusLabel.setForeground(Color.GREEN);
-//        connectionStatusLabel.setFont(new Font("Arial", Font.BOLD, 16));
-//
-//        totalAccountsLabel = new JLabel("Total Accounts Registered: 0", SwingConstants.CENTER);
-//        loggedInUsersLabel = new JLabel("Logged In Users: 0", SwingConstants.CENTER);
-//
-//        topPanel.add(connectionStatusLabel);
-//        topPanel.add(totalAccountsLabel);
-//        topPanel.add(loggedInUsersLabel);
-//
-//        // Center panel: Log area and logged-in users list
-//        JPanel centerPanel = new JPanel(new GridLayout(1, 2));
-//
-//        logArea = new JTextArea();
-//        logArea.setEditable(false);
-//        JScrollPane logScrollPane = new JScrollPane(logArea);
-//
-//        loggedInUsersModel = new DefaultListModel<>();
-//        loggedInUsersList = new JList<>(loggedInUsersModel);
-//        JScrollPane usersScrollPane = new JScrollPane(loggedInUsersList);
-//
-//        centerPanel.add(logScrollPane);
-//        centerPanel.add(usersScrollPane);
-//
-//        // Bottom panel: Stop server button
-//        JPanel bottomPanel = new JPanel();
-//        stopServerButton = new JButton("Stop Server");
-//        //stopServerButton.addActionListener(e -> stopServer());
-//        bottomPanel.add(stopServerButton);
-//
-//        // Add panels to the frame
-//        serverFrame.add(topPanel, BorderLayout.NORTH);
-//        serverFrame.add(centerPanel, BorderLayout.CENTER);
-//        serverFrame.add(bottomPanel, BorderLayout.SOUTH);
-//
-//        serverFrame.setVisible(true);
-//    }
-//
-//    private void loadAccounts() {
-//        // Mock loading accounts (username -> password)
-//        accounts.put("user1", "pass1");
-//        accounts.put("user2", "pass2");
-//        accounts.put("admin", "adminpass");
-//
-//        updateAccountCount();
-//    }
-//
-//    private void updateAccountCount() {
-//        totalAccountsLabel.setText("Total Accounts Registered: " + accounts.size());
-//    }
-//
-//    private void updateLoggedInCount() {
-//        loggedInUsersLabel.setText("Logged In Users: " + loggedInUsers.size());
-//    }
-//}
+//updated verrr

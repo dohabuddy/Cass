@@ -26,7 +26,6 @@ public class Client {
         if (clientIsConnected) {  //  Prevent connecting if connection already exists
             outputGUI = "Already connected to " + HOST;
             System.out.println(outputGUI);    //  Display Logic
-
         } else {    //  Attempt connection
             clientConnection = new Network(HOST);   //  Client creates connection request
             response = clientConnection.send(request); //   Client sends connect request
