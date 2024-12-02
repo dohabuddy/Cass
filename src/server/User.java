@@ -22,7 +22,7 @@ public class User {
     }
 
     // Getters and setters
-    public String getUser() {
+    public String getUsername() {
         return this.username;
     }
 
@@ -41,7 +41,7 @@ public class User {
     public String getEmail(String username) {
         // Search for the user in the userList by username
         for (User user : userList) {
-            if (user.getUser().equals(username)) {
+            if (user.getUsername().equals(username)) {
                 return user.email; // Return the email if a match is found
             }
         }

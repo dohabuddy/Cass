@@ -83,13 +83,12 @@ public class Server {
         System.out.println("SERVER: connection received for id " + nextId + "\n");
         ++nextId;
     }   //  --  End Peer Connection Method  --
-    //  --  Server Listens for new connections  --
+    //  --  Server Listens For New Connections Method  --
     public void listen() {
         try {
             serversocket = new ServerSocket(PORT);
             System.out.println("Server started on port " + PORT);
-
-            while (isRunning) {
+            while (isRunning) { //  Control infinite loop
                 try {
                     Socket socket = serversocket.accept(); // Accept client connections
                     if (!isRunning) break; // Double-check in case the socket was closed
@@ -99,23 +98,23 @@ public class Server {
                         System.out.println("Server socket closed.");
                         break; // Exit the loop if the server is stopping
                     } else {
-                        e.printStackTrace();
-                    }
-                }
-            }
+                        System.out.println(e);
+                    }   //  End Else
+                }   //  End Catch
+            }   //  End While
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println(e);
         } finally {
             try {
                 if (serversocket != null && !serversocket.isClosed()) {
                     serversocket.close();
-                }
+                }   //  End If
             } catch (IOException e) {
-                e.printStackTrace();
-            }
+                System.out.println(e);
+            }   //  End Catch
             System.out.println("Server stopped listening.");
-        }
-    }
+        }   //  End Finally
+    }   //  --  End Listen Method   --
     //  -- SERVER OPERATIONS --
     //  -- Log in to Server Method  --
     public String login(String user, String pass){
@@ -124,7 +123,7 @@ public class Server {
         userDB.loadUserList();
         for(int i = 0; i <User.userList.size(); i++){   //  Check user list
             User account = User.userList.get(i);
-            if(!user.equals(account.getUser())){ // if user doesn't exist / match
+            if(!user.equals(account.getUsername())){ // if user doesn't exist / match
                 response = "1"; // no user exists
             } else if (account.isLocked()){ // checks if acc is locked out
                 response = "2"; // account is locked
@@ -156,7 +155,7 @@ public class Server {
         String res = "";
         for (int i = 0; i < User.userList.size(); i++) {
             User account = User.userList.get(i);
-            if (!user.equals(account.getUser())) {
+            if (!user.equals(account.getUsername())) {
                 res = "1"; // user does not exist
             } else {
                 String address = account.getEmail(user); // getting user email
@@ -171,21 +170,21 @@ public class Server {
         return res;
     }
     // tester register function
-    public String register(String user, String pass, String add){
+    public String register(String username, String password, String email){
         String res = "";
         boolean userExists = false;
         for (int i = 0; i < User.userList.size(); i++){
             User account = User.userList.get(i);
-            System.out.println(account.getUser());
-            if (user.equals(account.getUser())){ // if account with user already exists
+            System.out.println(account.getUsername());
+            if (username.equals(account.getUsername())){ // if account with user already exists
                 userExists = true;
                 res = "1";
                 break;
             }
         }
         if (!userExists){
-            User account = new User(user, pass, add); // create new user
-            User.userList.add(account); // add new user to arraylist
+            User account = new User(username, password, email); // create new user
+            userDB.registerUser(account); // add new user to arraylist
             System.out.println(User.userList.size());
             res = "0"; // successful registration
         }
@@ -252,5 +251,28 @@ public class Server {
         }   //  End If (Data is not null)
         System.out.println("SERVER sending: " + response);
         return response;
+    }
+    public synchronized List<String> getLoggedInUsers() {
+        List<String> loggedInUsers = new ArrayList<>();
+        for (User account : User.userList) {
+            if (account.isLogged()) {
+                loggedInUsers.add(account.getUsername());
+            }
+        }
+        return loggedInUsers;
+    }
+
+    public synchronized List<String> getLockedOutUsers() {
+        List<String> LockedOutUsers = new ArrayList<>();
+        for (User account : User.userList) {
+            if (!account.isLogged()) {
+                LockedOutUsers.add(account.getUsername());
+            }
+        }
+        return LockedOutUsers;
+    }
+
+    public synchronized int getNumberOfRegisteredUsers() {
+        return User.userList.size();
     }
 }

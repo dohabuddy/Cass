@@ -14,30 +14,8 @@ public class RegexEmail {
     // Modified password regex without special characters
     // The password must have at least one digit, one lowercase letter, one uppercase letter,
     // and must be at least 8 characters long. No special characters are required.
-    private static String passwordregex = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=\\S+$).{8,}$";
+    private static String passwordregex = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*(),.?\":{}|<>])[A-Za-z0-9!@#$%^&*(),.?\":{}|<>]{8,}$";
     private static Pattern passwordpattern = Pattern.compile(passwordregex);
-
-    public static void main(String[] args){
-        Scanner kb = new Scanner(System.in);
-        String search;
-
-        // Email validation loop
-        do {
-            System.out.print("Enter your email address: ");
-            search = kb.next().toUpperCase();
-            System.out.println((!validEmailAddress(search) ? "Not a" : "A") + " valid email address");
-        } while (!validEmailAddress(search));
-
-        // Password validation loop
-        do {
-            System.out.println("Enter Password w/ Atleast 8 charecters, One upercase letter, One lowercase letter, & one #");
-            search = kb.next();
-            System.out.println((!validPassword(search) ? "Not a" : "A") + " valid password");
-        } while (!validPassword(search));
-
-        kb.close();
-    }
-
     // Validate password based on regex
     public static boolean validPassword(String password) {
         Matcher matcher = passwordpattern.matcher(password);

@@ -5,11 +5,13 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.List;
 
 public class ServerGUI extends JFrame {
     private JButton startButton;
     private JButton stopButton;
-    private JTable connectedUsersTable;
+    private JButton updateButton;
+    private JTable usersTable;
     private DefaultTableModel tableModel;
     private JLabel statusLabel;
     private JLabel registeredAccountsLabel;
@@ -20,64 +22,50 @@ public class ServerGUI extends JFrame {
 
     public ServerGUI() {
         setTitle("Server Management Console");
-        setSize(600, 400);
+        setSize(700, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // Create control panel
         JPanel controlPanel = new JPanel();
         startButton = new JButton("Start Server");
         stopButton = new JButton("Stop Server");
+        updateButton = new JButton("Update");
         stopButton.setEnabled(false);
 
         controlPanel.add(startButton);
         controlPanel.add(stopButton);
+        controlPanel.add(updateButton);
 
-        // Create status panel
         JPanel statusPanel = new JPanel();
         statusLabel = new JLabel("Server Status: Stopped");
         registeredAccountsLabel = new JLabel("Registered Accounts: 0");
         statusPanel.add(statusLabel);
         statusPanel.add(registeredAccountsLabel);
 
-        // Create connected users table
-        String[] columnNames = {"Client ID", "Username", "Connection Time"};
+        String[] columnNames = {"Logged-In Users", "Locked-Out Users"};
         tableModel = new DefaultTableModel(columnNames, 0);
-        connectedUsersTable = new JTable(tableModel);
-        JScrollPane tableScrollPane = new JScrollPane(connectedUsersTable);
+        usersTable = new JTable(tableModel);
+        JScrollPane tableScrollPane = new JScrollPane(usersTable);
 
-        // Add components to frame
         add(controlPanel, BorderLayout.NORTH);
         add(tableScrollPane, BorderLayout.CENTER);
         add(statusPanel, BorderLayout.SOUTH);
 
-        // Add action listeners
         setupActionListeners();
     }
 
     private void setupActionListeners() {
-        startButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                startServer();
-            }
-        });
-
-        stopButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                stopServer();
-            }
-        });
+        startButton.addActionListener(e -> startServer());
+        stopButton.addActionListener(e -> stopServer());
+        updateButton.addActionListener(e -> updateServerStatus());
     }
 
     private void startServer() {
         if (!isServerRunning) {
-            // Start server in a separate thread
             serverThread = new Thread(() -> {
                 try {
-                    serverInstance = new Server();  // Initialize the server
-                    serverInstance.listen();       // Start listening for connections
+                    serverInstance = new Server();
+                    serverInstance.listen();
                 } catch (Exception e) {
                     JOptionPane.showMessageDialog(this,
                             "Error starting server: " + e.getMessage(),
@@ -86,7 +74,7 @@ public class ServerGUI extends JFrame {
                 }
             });
             serverThread.start();
-            // Update UI
+
             statusLabel.setText("Server Status: Running");
             startButton.setEnabled(false);
             stopButton.setEnabled(true);
@@ -97,16 +85,14 @@ public class ServerGUI extends JFrame {
     private void stopServer() {
         if (isServerRunning) {
             try {
-                // Stop the server
                 if (serverInstance != null) {
-                    serverInstance.stop();  // Implement a `stop` method in `Server`
+                    serverInstance.stop();
                 }
-                // Interrupt the server thread
+
                 if (serverThread != null) {
                     serverThread.interrupt();
                 }
 
-                // Update UI
                 statusLabel.setText("Server Status: Stopped");
                 startButton.setEnabled(true);
                 stopButton.setEnabled(false);
@@ -117,6 +103,45 @@ public class ServerGUI extends JFrame {
                         "Server Error",
                         JOptionPane.ERROR_MESSAGE);
             }
+        }
+    }
+
+    private void updateServerStatus() {
+        if (isServerRunning && serverInstance != null) {
+            try {
+                // Fetch data from the server instance
+                int registeredUsers = serverInstance.getNumberOfRegisteredUsers();
+                List<String> loggedInUsers = serverInstance.getLoggedInUsers();
+                List<String> lockedOutUsers = serverInstance.getLockedOutUsers();
+
+                registeredAccountsLabel.setText("Registered Accounts: " + registeredUsers);
+
+                tableModel.setRowCount(0);
+                int maxRows = Math.max(loggedInUsers.size(), lockedOutUsers.size());
+                for (int i = 0; i < maxRows; i++) {
+                    String loggedInUser = i < loggedInUsers.size() ? loggedInUsers.get(i) : "";
+                    String lockedOutUser = i < lockedOutUsers.size() ? lockedOutUsers.get(i) : "";
+                    tableModel.addRow(new Object[]{loggedInUser, lockedOutUser});
+                }
+
+                if (!loggedInUsers.isEmpty()) {
+                    String loggedInDetails = String.join(", ", loggedInUsers);
+                    statusLabel.setText("Logged-In Users (" + loggedInUsers.size() + "): " + loggedInDetails);
+                } else {
+                    statusLabel.setText("Logged-In Users: None");
+                }
+
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this,
+                        "Error updating server status: " + e.getMessage(),
+                        "Update Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        } else {
+            JOptionPane.showMessageDialog(this,
+                    "Server is not running. Please start the server first.",
+                    "Update Error",
+                    JOptionPane.WARNING_MESSAGE);
         }
     }
 

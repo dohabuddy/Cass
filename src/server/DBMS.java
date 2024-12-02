@@ -81,12 +81,18 @@ public class DBMS {
         }
         return false;
     }
-    public boolean registerUser(String username, String password) {
+    public boolean registerUser(User user) {
+        if (selectUser(user.getUsername()) != "User not found") {
+            System.out.println("Username already exists!");
+            return false;
+        }
         String query = "INSERT INTO " + TABLE + " (Username, Password, Connected, LoggedIn, Strikes) VALUES (?, ?, 0, 0, 0)";
         try (PreparedStatement ps = connection.prepareStatement(query)) {
-            ps.setString(1, username);
-            ps.setString(2, password);
+            ps.setString(1, user.getUsername());
+            ps.setString(2, user.getPass());
             ps.executeUpdate();
+            close();
+            loadUserList();
             return true;
         } catch (SQLException e) {
             handleSQLException(e);
