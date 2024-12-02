@@ -38,11 +38,17 @@ public class Server {
         try {
             if (serversocket != null && !serversocket.isClosed()) {
                 serversocket.close();  // Close the ServerSocket
-                userDB.close();
-                System.out.println("Server stopped.");
             }
+
+            // Interrupt all client connections
+            for (MultiThread connection : clientConnections) {
+                connection.interrupt();  // Assuming MultiThread extends Thread
+            }
+            clientConnections.clear();  // Clear the list of client connections
+
+            System.out.println("Server stopped.");
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println(e);
         }
     }
     //  --  Get Port Method --
@@ -78,23 +84,38 @@ public class Server {
         ++nextId;
     }   //  --  End Peer Connection Method  --
     //  --  Server Listens for new connections  --
-    public void listen(){
+    public void listen() {
         try {
-            //  Open the server socket
-            serversocket = new ServerSocket(getPort()); // Listens to Port 8000
-            //  Server runs until we manually shut it down
-            while(true) {   //  Infinite Loop Created
-                //  Block until a client comes along
-                Socket socket = serversocket.accept(); //   Client socket is connected to server now
-                //  If connection is accepted then create a peer-to-peer socket
-                peerConnection(socket); // client is talking to server now
-            }   //  End While (true)
-        }   //  End Try
-        catch(IOException e) {
+            serversocket = new ServerSocket(PORT);
+            System.out.println("Server started on port " + PORT);
+
+            while (isRunning) {
+                try {
+                    Socket socket = serversocket.accept(); // Accept client connections
+                    if (!isRunning) break; // Double-check in case the socket was closed
+                    peerConnection(socket);
+                } catch (IOException e) {
+                    if (!isRunning) {
+                        System.out.println("Server socket closed.");
+                        break; // Exit the loop if the server is stopping
+                    } else {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        } catch (IOException e) {
             e.printStackTrace();
-            System.exit(1);
-        }   //  End Catch
-    }   //  --  End Listen  --
+        } finally {
+            try {
+                if (serversocket != null && !serversocket.isClosed()) {
+                    serversocket.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            System.out.println("Server stopped listening.");
+        }
+    }
     //  -- SERVER OPERATIONS --
     //  -- Log in to Server Method  --
     public String login(String user, String pass){

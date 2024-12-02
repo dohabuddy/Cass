@@ -101,7 +101,6 @@ public class ServerGUI extends JFrame {
                 if (serverInstance != null) {
                     serverInstance.stop();  // Implement a `stop` method in `Server`
                 }
-
                 // Interrupt the server thread
                 if (serverThread != null) {
                     serverThread.interrupt();
