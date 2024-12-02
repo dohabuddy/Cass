@@ -1,4 +1,3 @@
-
 package server;
 
 import javax.swing.*;
@@ -6,7 +5,6 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.sql.*;
 
 public class ServerGUI extends JFrame {
     private JButton startButton;
@@ -17,12 +15,10 @@ public class ServerGUI extends JFrame {
     private JLabel registeredAccountsLabel;
 
     private Server serverInstance;
-    private DBMS databaseManager;
     private Thread serverThread;
     private boolean isServerRunning = false;
 
     public ServerGUI() {
-        // Initialize the GUI
         setTitle("Server Management Console");
         setSize(600, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -77,51 +73,39 @@ public class ServerGUI extends JFrame {
 
     private void startServer() {
         if (!isServerRunning) {
-            // Initialize database connection using getter methods for credentials
-            try {
-                Server.startServer();
-                //updateRegisteredAccountsCount();
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this,
-                        "Could not connect to database: " + e.getMessage(),
-                        "Database Error",
-                        JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
             // Start server in a separate thread
             serverThread = new Thread(() -> {
-                serverInstance = new Server();
-                serverInstance.listen();
+                try {
+                    serverInstance = new Server();  // Initialize the server
+                    serverInstance.listen();       // Start listening for connections
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(this,
+                            "Error starting server: " + e.getMessage(),
+                            "Server Error",
+                            JOptionPane.ERROR_MESSAGE);
+                }
             });
             serverThread.start();
-
             // Update UI
             statusLabel.setText("Server Status: Running");
             startButton.setEnabled(false);
             stopButton.setEnabled(true);
             isServerRunning = true;
-
-            // Start a thread to update connected users
-            //startConnectionMonitorThread();
         }
     }
 
     private void stopServer() {
         if (isServerRunning) {
             try {
-                // Close server socket
-                if (Server.serversocket != null) {
-                    Server.serversocket.close();
+                // Stop the server
+                if (serverInstance != null) {
+                    serverInstance.stop();  // Implement a `stop` method in `Server`
                 }
 
-                // Interrupt server thread
+                // Interrupt the server thread
                 if (serverThread != null) {
                     serverThread.interrupt();
                 }
-
-                // Clear connected users
-                tableModel.setRowCount(0);
 
                 // Update UI
                 statusLabel.setText("Server Status: Stopped");
@@ -129,73 +113,13 @@ public class ServerGUI extends JFrame {
                 stopButton.setEnabled(false);
                 isServerRunning = false;
             } catch (Exception e) {
-                e.printStackTrace();
+                JOptionPane.showMessageDialog(this,
+                        "Error stopping server: " + e.getMessage(),
+                        "Server Error",
+                        JOptionPane.ERROR_MESSAGE);
             }
         }
     }
-//
-//    private void startConnectionMonitorThread() {
-//        Thread monitorThread = new Thread(() -> {
-//            while (isServerRunning) {
-//                // Update connected users
-//                updateConnectedUsers();
-//
-//                // Update registered accounts count
-//                updateRegisteredAccountsCount();
-//
-//                try {
-//                    Thread.sleep(5000); // Update every 5 seconds
-//                } catch (InterruptedException e) {
-//                    break;
-//                }
-//            }
-//        });
-//        monitorThread.start();
-//    }
-//
-//    private void updateConnectedUsers() {
-//        SwingUtilities.invokeLater(() -> {
-//            // Clear existing table
-//            tableModel.setRowCount(0);
-//
-//            // Populate table with current connections
-//            if (serverInstance != null && Server.clientConnections != null) {
-//                for (MultiThread connection : Server.clientConnections) {
-//                    User user = serverInstance.getUserByConnectionId((int) connection.getId()); // Cast to long if needed
-//                    if (user != null) {
-//                        tableModel.addRow(new Object[] {
-//                                (int) connection.getId(),                   // Cast to int if getId() returns a long
-//                                user.getUser(),                             // Username
-//                                serverInstance.getClientConnectionTime((int) connection.getId()) // Cast to long if needed
-//                        });
-//                    }
-//                }
-//            }
-//        });
-//    }
-//
-//    private void updateRegisteredAccountsCount() {
-//        try {
-//            // Query to count registered accounts
-//            String countQuery = "SELECT COUNT(*) FROM users";
-//            Connection conn = DriverManager.getConnection(
-//                    "jdbc:mysql://127.0.0.1:3306/sys",
-//                    DBMS.getUsernameSQL(), // Use the getter method
-//                    DBMS.getPasswordSQL()  // Use the getter method
-//            );
-//            Statement stmt = conn.createStatement();
-//            ResultSet rs = stmt.executeQuery(countQuery);
-//
-//            if (rs.next()) {
-//                int accountCount = rs.getInt(1);
-//                registeredAccountsLabel.setText("Registered Accounts: " + accountCount);
-//            }
-//
-//            conn.close();
-//        } catch (SQLException e) {
-//            registeredAccountsLabel.setText("Registered Accounts: N/A");
-//        }
-//    }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
@@ -204,4 +128,3 @@ public class ServerGUI extends JFrame {
         });
     }
 }
-//updated verrr

@@ -8,7 +8,9 @@ public class Server {
     public static void main(String[] args) {
         startServer();
     }
-        //  Instantiate list for active client threads
+    // Flag to control server state
+    private boolean isRunning = true;
+    //  Instantiate list for active client threads
     private static Vector<MultiThread> clientConnections;
     //  Socket waits for client connections
     public static ServerSocket serversocket;
@@ -25,14 +27,24 @@ public class Server {
         this.userDB = new DBMS();
         userDB.loadUserList();
         userDB.printUserList();
-        //  Listen for incoming connection requests
-        listen();
         userDB.close();
     }   //  --  End Server Constructor  --
     //  --  Start Server From GUI Method    --
     public static void startServer(){
         new Server();
     }   //  --  End Start Server Method --
+    //  --  Stop Server Method  --
+    public void stop() {
+        isRunning = false;  // Set flag to stop the loop
+        try {
+            if (serversocket != null && !serversocket.isClosed()) {
+                serversocket.close();  // Close the ServerSocket
+                System.out.println("Server stopped.");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
     //  --  Get Port Method --
     public static int getPort() {
         return PORT;
