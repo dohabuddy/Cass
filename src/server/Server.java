@@ -7,6 +7,7 @@ import java.util.*;
 public class Server {
     public static void main(String[] args) {
         startServer();
+
     }
     // Flag to control server state
     private boolean isRunning = true;
@@ -173,6 +174,20 @@ public class Server {
         }   //  End Else
         return response;
     }   //  --  End Register Method --
+    // -- New Password Method -- //
+    public String updatePassword(String username, String newPass){
+        String response = "";
+        int index = indexOfUser(username);
+        if (index == -1){
+            response = "1"; // Username does not exist
+        } else {
+            User account = User.userList.get(index);
+            account.setPassword(newPass, userDB);
+            response = "0"; // Successfully update password
+        }
+        return response;
+    } // -- End New Password Method -- //
+
     //  --  Logout Method   --
     public String logout(String username){
         String response = "";
@@ -273,6 +288,16 @@ public class Server {
                         username = info[0];
                         response = shutdown(username);
                         break;
+                    case '7':
+                        System.out.println("Update Password");
+                        username = info[0];
+                        pass = info[1];
+                        response = updatePassword(username, pass);
+                        break;
+                    case '8':
+                        System.out.println("Server Application");
+                        response = serverApplication();
+                        break;
                     default : // in case it's not entering a case for some reason so we know
                        response = ("Error with switch loop.");
                 }   //  End Switch (operation)
@@ -312,7 +337,6 @@ public class Server {
         return User.userList.size();
     }
     public String serverApplication(){
-        String result = "Server Use!";
-        return result;
+        return "0Good Job!";
     }
 }
