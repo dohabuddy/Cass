@@ -7,6 +7,7 @@ import java.util.*;
 public class Server {
     public static void main(String[] args) {
         startServer();
+
     }
     // Flag to control server state
     private boolean isRunning = true;
@@ -292,6 +293,7 @@ public class Server {
                         username = info[0];
                         pass = info[1];
                         response = updatePassword(username, pass);
+                        break;
                     case '8':
                         System.out.println("Server Application");
                         response = serverApplication();

@@ -245,13 +245,13 @@ public class ClientGUI {
             String newPassword = new String(newPasswordField.getPassword());
             String verifyPassword = new String(verifyPasswordField.getPassword());
 
-            // if (newPassword.equals(verifyPassword)) {
-            //  String result = client.updatePassword(newPassword);
-            //  JOptionPane.showMessageDialog(updatePasswordFrame, result);
-            //  updatePasswordFrame.dispose();
-            //  } else {
-            //      JOptionPane.showMessageDialog(updatePasswordFrame, "Passwords do not match!", "Error", JOptionPane.ERROR_MESSAGE);
-            //  }
+             if (newPassword.equals(verifyPassword)) {
+              String result = client.updatePassword(newPassword);
+              JOptionPane.showMessageDialog(updatePasswordFrame, result);
+              updatePasswordFrame.dispose();
+              } else {
+                  JOptionPane.showMessageDialog(updatePasswordFrame, "Passwords do not match!", "Error", JOptionPane.ERROR_MESSAGE);
+              }
         });
 
         updatePasswordFrame.setVisible(true);
