@@ -194,6 +194,7 @@ public class ClientGUI {
             showLoginWindow();
         });
 
+
          serverAppButton.addActionListener(e -> {
              String result = client.serverApplication();
              char success = result.charAt(0);
