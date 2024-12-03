@@ -194,11 +194,17 @@ public class ClientGUI {
             showLoginWindow();
         });
 
-        // serverAppButton.addActionListener(e -> {
-        //   String response = Server.serverapplication();
-        // JOptionPane.showMessageDialog(dashboardFrame, response, "Server Application", JOptionPane.INFORMATION_MESSAGE);
-        //   });
 
+         serverAppButton.addActionListener(e -> {
+             String result = client.serverApplication();
+             char success = result.charAt(0);
+             String output = result.substring(1);
+             if (success == '0') {
+                 JOptionPane.showMessageDialog(dashboardFrame, output, "Server Application", JOptionPane.INFORMATION_MESSAGE);
+             } else {
+                 JOptionPane.showMessageDialog(dashboardFrame, output, "Server Application Error", JOptionPane.ERROR_MESSAGE);
+             }
+         });
         dashboardFrame.setVisible(true);
     }
 
@@ -210,7 +216,7 @@ public class ClientGUI {
         JLabel newPasswordLabel = new JLabel("New Password:");
         JPasswordField newPasswordField = new JPasswordField(20);
         JLabel verifyPasswordLabel = new JLabel("Verify Password:");
-        JPasswordField verifyPasswordField = new JPasswordField(30);
+        JPasswordField verifyPasswordField = new JPasswordField(20);
         JButton updateButton = new JButton("Update");
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -239,18 +245,17 @@ public class ClientGUI {
             String newPassword = new String(newPasswordField.getPassword());
             String verifyPassword = new String(verifyPasswordField.getPassword());
 
-            // if (newPassword.equals(verifyPassword)) {
-            //  String result = client.updatePassword(newPassword);
-            //  JOptionPane.showMessageDialog(updatePasswordFrame, result);
-            //  updatePasswordFrame.dispose();
-            //  } else {
-            //      JOptionPane.showMessageDialog(updatePasswordFrame, "Passwords do not match!", "Error", JOptionPane.ERROR_MESSAGE);
-            //  }
+             if (newPassword.equals(verifyPassword)) {
+              String result = client.updatePassword(newPassword);
+              JOptionPane.showMessageDialog(updatePasswordFrame, result);
+              updatePasswordFrame.dispose();
+              } else {
+                  JOptionPane.showMessageDialog(updatePasswordFrame, "Passwords do not match!", "Error", JOptionPane.ERROR_MESSAGE);
+              }
         });
 
         updatePasswordFrame.setVisible(true);
     }
-
     private void openRegisterWindow() {
         // Set up the registration frame with background image
         String registerBackgroundPath = "/Users/yasmine/Downloads/imagess.jpeg"; // Update the path as needed
