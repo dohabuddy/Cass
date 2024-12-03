@@ -71,7 +71,6 @@ public class ServerGUI extends JFrame {
         stopButton.addActionListener(e -> stopServer());
         updateButton.addActionListener(e -> updateServerStatus());
     }
-
     private void startServer() {
         if (!isServerRunning) {
             serverThread = new Thread(() -> {
@@ -86,14 +85,12 @@ public class ServerGUI extends JFrame {
                 }
             });
             serverThread.start();
-
+            isServerRunning = true;
             statusLabel.setText("Server Status: Running");
             startButton.setEnabled(false);
             stopButton.setEnabled(true);
-            isServerRunning = true;
         }
     }
-
     private void stopServer() {
         if (isServerRunning) {
             try {
@@ -123,7 +120,7 @@ public class ServerGUI extends JFrame {
             try {
                 // Fetch data from the server instance
                 int registeredUsers = serverInstance.getNumberOfRegisteredUsers();
-                int connectedUsers = serverInstance.getNumberOfRegisteredUsers(); // Correct method
+                int connectedUsers = serverInstance.getNumberOfConnections();
 
                 List<String> loggedInUsers = serverInstance.getLoggedInUsers();
                 List<String> lockedOutUsers = serverInstance.getLockedOutUsers();

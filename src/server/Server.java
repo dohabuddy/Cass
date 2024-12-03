@@ -7,7 +7,6 @@ import java.util.*;
 public class Server {
     public static void main(String[] args) {
         startServer();
-
     }
     // Flag to control server state
     private boolean isRunning = true;
@@ -27,7 +26,9 @@ public class Server {
         clientConnections = new Vector<>();
         this.userDB = new DBMS();
         userDB.syncUserList();
-        userDB.printUserList();
+        userDB.logoutAll(userDB);
+        userDB.disconnectAll(userDB);
+        //userDB.printUserList();   //  Unit Test
     }   //  --  End Server Constructor  --
     //  --  Start Server From GUI Method    --
     public static void startServer(){
@@ -119,7 +120,7 @@ public class Server {
         }   //  End Finally
     }   //  --  End Listen Method   --
     //  -- CLIENT OPERATIONS --
-    //  -- Log in to Server Method  --
+    //  -- Log in to Server Method (1) --
     public String login(String username, String pass) {
         //  Login variables
         String response = "";
@@ -143,7 +144,21 @@ public class Server {
         }   //  End Else
         return response;
     }   //  --  End Login Method    --
-    //  --  Password Recovery Method    --
+    //  --  Register New User Method (2)    --
+    public String register(String username, String password, String email) {
+        String response = "";
+        int index = indexOfUser(username);
+        if (index != -1) response = "1"; //  Username exists
+        else {
+            User account = new User(username, password, email); //  Create new user
+            userDB.registerUser(account);   //  Add new user to database
+            userDB.syncUserList();  //  Sync database to array list
+            System.out.println(User.userList.size());
+            response = "0"; // successful registration
+        }   //  End Else
+        return response;
+    }   //  --  End Register Method --
+    //  --  Password Recovery Method (3)   --
     public String passwordRecovery(String username) {
         SendEmail email = new SendEmail();
         String response = "";
@@ -160,35 +175,7 @@ public class Server {
         }   //  End Else
         return response;
     }   //  --  End Password Recovery Method    --
-    //  --  Register New User Method    --
-    public String register(String username, String password, String email) {
-        String response = "";
-        int index = indexOfUser(username);
-        if (index != -1) response = "1"; //  Username exists
-        else {
-            User account = new User(username, password, email); //  Create new user
-            userDB.registerUser(account);   //  Add new user to database
-            userDB.syncUserList();  //  Sync database to array list
-            System.out.println(User.userList.size());
-            response = "0"; // successful registration
-        }   //  End Else
-        return response;
-    }   //  --  End Register Method --
-    // -- New Password Method -- //
-    public String updatePassword(String username, String newPass){
-        String response = "";
-        int index = indexOfUser(username);
-        if (index == -1){
-            response = "1"; // Username does not exist
-        } else {
-            User account = User.userList.get(index);
-            account.setPassword(newPass, userDB);
-            response = "0"; // Successfully update password
-        }
-        return response;
-    } // -- End New Password Method -- //
-
-    //  --  Logout Method   --
+    //  --  Logout Method (4)   --
     public String logout(String username){
         String response = "";
         int index = indexOfUser(username);
@@ -201,6 +188,19 @@ public class Server {
         }   //  End Else
         return response;
     }   //  --  End Logout Method   --
+    // -- Update Password Method -- //
+    public String updatePassword(String username, String newPass){
+        String response = "";
+        int index = indexOfUser(username);
+        if (index == -1){
+            response = "1"; // Username does not exist
+        } else {
+            User account = User.userList.get(index);
+            account.setPassword(newPass, userDB);
+            response = "0"; // Successfully update password
+        }
+        return response;
+    } // -- End New Password Method -- //
     public String shutdown(String username){
         String response = "";
         int index = indexOfUser(username);

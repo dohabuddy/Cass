@@ -152,8 +152,37 @@ public class DBMS {
             handleSQLException(e);
         }
         return false;
-    }
-
+    }   //  --  End Update User Password Method --
+    //  --  Disconnect All Connected Users Method   --
+    public void disconnectAll(DBMS userDB){
+        for(int i = 0; i < User.userList.size(); ++i){
+            User.userList.get(i).setConnected(false, userDB);
+        }   //  End For
+    }       //  --  End Disconnect All Connected Users Method   --
+    //  --  Logout All Logged Users Method   --
+    public void logoutAll(DBMS userDB){
+        for(int i = 0; i < User.userList.size(); ++i){
+            User.userList.get(i).setLogged(false, userDB);
+        }   //  End For
+    }   //  --  End Logout All Users Method --
+    //  --  Close Connection Method --
+    public void close() {
+        try {
+            if (connection != null && !connection.isClosed()) {
+                connection.close();
+            }   //  End If
+        }   //  End Try
+        catch (SQLException e) {
+            System.out.println(e);
+        }   //  End Catch
+    }   //  --  End Close Method    --
+    //  --  Handle SQL Exceptions Method    --
+    private void handleSQLException(SQLException e) {
+        System.err.println("SQLException: " + e.getMessage());
+        System.err.println("SQLState: " + e.getSQLState());
+        System.err.println("VendorError: " + e.getErrorCode());
+    }   //  --  End Handle SQL Exception Method --
+    /* Unit Testing
     public void printResultSet(ResultSet resultSet) {
         try {
             // Metadata contains how many columns in the data
@@ -192,6 +221,8 @@ public class DBMS {
             System.out.println("Failed to create or log user: " + e.getMessage());
         }
     }
+*/
+    /* Unit Test
     public void printUserList() {
         if (User.userList.isEmpty()) {
             System.out.println("No users available.");
@@ -202,30 +233,5 @@ public class DBMS {
             }
         }
     }
-    public void disconnectAll(DBMS userDB){
-        for(int i = 0; i < User.userList.size(); ++i){
-            User.userList.get(i).setConnected(false, userDB);
-        }
-    }
-    public void logoutAll(DBMS userDB){
-        for(int i = 0; i < User.userList.size(); ++i){
-            User.userList.get(i).setLogged(false, userDB);
-        }
-    }
-    public void close() {
-        try {
-            if (connection != null && !connection.isClosed()) {
-                connection.close();
-            }   //  End If
-        }   //  End Try
-        catch (SQLException e) {
-            System.out.println(e);
-        }   //  End Catch
-    }   //  --  End Close Method    --
-    //  --  Handle SQL Exceptions Method    --
-    private void handleSQLException(SQLException e) {
-        System.err.println("SQLException: " + e.getMessage());
-        System.err.println("SQLState: " + e.getSQLState());
-        System.err.println("VendorError: " + e.getErrorCode());
-    }   //  --  End Handle SQL Exception Method --
+*/
 }   //  END DBMS CLASS

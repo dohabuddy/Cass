@@ -1,4 +1,9 @@
 package client;
+
+import java.io.IOException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
+
 //  Core Program Logic
 //  Client Class creates a connection and allows the user to perform operations
 public class Client {
@@ -28,17 +33,25 @@ public class Client {
             outputGUI = "Already connected to " + HOST;
             System.out.println(outputGUI);    //  Display Logic
         } else {    //  Attempt connection
-            clientConnection = new Network(HOST);   //  Client creates connection request
-            response = clientConnection.send(request); //   Client sends connect request
-            if (response == null) {  //  Failed connection
-                outputGUI = "Error connecting to " + HOST;
-                System.out.println(outputGUI);    //  Display Logic
-                clientIsConnected = false;
-            } else {    //  Successful connection
-                outputGUI = "0Connection successful to " + HOST;
-                System.out.println(outputGUI);   //  Display Logic
-                clientIsConnected = true;
-            }   //  End Else
+            try {
+                clientConnection = new Network(HOST); //  Client creates connection request
+                response = clientConnection.send(request); //   Client sends connect request
+                if (response == null) {  //  Failed connection
+                    outputGUI = "Error connecting to " + HOST;
+                    System.out.println(outputGUI);    //  Display Logic
+                    clientIsConnected = false;
+                } else {    //  Successful connection
+                    outputGUI = "0Connection successful to " + HOST;
+                    System.out.println(outputGUI);   //  Display Logic
+                    clientIsConnected = true;
+                }   //  End Else
+            } catch (UnknownHostException e){
+                outputGUI = "Host " + HOST + " is unavailable.";
+            } catch (SocketTimeoutException e){
+                outputGUI = "Connection to " + HOST + " has timed out.";
+            } catch (IOException e) {
+                outputGUI = "Server Not Available";
+            }
         }   //  End Else
         return outputGUI;
     }   //  --  End Connect Method  --
@@ -274,8 +287,7 @@ public class Client {
             if (readServerOperation == '0') {   //  '0'=Success
                 outputGUI = "0Successful Application Usage";
                 System.out.println(outputGUI);  //  Display Logic
-                clientIsLoggedIn = false;
-            } else {    //  If response is not a '0' then logout failed for some reason
+            } else {    //  If response is not a '0' then operation failed for some reason
                 outputGUI = "1An error occurred.";
                 System.out.println(outputGUI);  //  Display Logic
             }   //  End Else
